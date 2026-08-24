@@ -138,7 +138,8 @@ def main():
 
     command = build_command(args)
     env = os.environ.copy()
-    env.setdefault("ROCR_VISIBLE_DEVICES", "1")
+    # See ptt.py's main() for why: no invented ROCR_VISIBLE_DEVICES default,
+    # GGML_CUDA_DISABLE_GRAPHS=1 retained as a demonstrated requirement.
     env.setdefault("GGML_CUDA_DISABLE_GRAPHS", "1")
     env.setdefault("VC_NO_BARGE", "1")
     env.setdefault("VC_FORCE_BOS", "1")

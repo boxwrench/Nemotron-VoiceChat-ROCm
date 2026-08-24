@@ -269,7 +269,17 @@ def main() -> int:
 
     command = build_command(args)
     env = os.environ.copy()
-    env.setdefault("ROCR_VISIBLE_DEVICES", "1")
+    # No ROCR_VISIBLE_DEVICES default here: inventing a physical GPU index
+    # is a machine-specific choice, not this client's to make. If the user
+    # has set it, os.environ.copy() already carries it through; if not,
+    # normal runtime enumeration plus --device ROCm0 picks the first
+    # visible ROCm device. See docs/HARDWARE.md.
+    #
+    # GGML_CUDA_DISABLE_GRAPHS=1 is retained: the R9700-Q8-M1 baseline
+    # demonstrated graph-enabled execution crashing on this runtime (see
+    # research/baselines/R9700-Q8-M1/README.md, "Required compatibility
+    # settings"), so this is a known-good requirement, not a leftover
+    # dev-time default.
     env.setdefault("GGML_CUDA_DISABLE_GRAPHS", "1")
     env.setdefault("VC_NO_BARGE", "1")
     env.setdefault("VC_FORCE_BOS", "1")

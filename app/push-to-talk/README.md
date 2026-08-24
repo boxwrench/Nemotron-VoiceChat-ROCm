@@ -47,7 +47,6 @@ export VC_BIN=/path/to/build/hip-gfx1201/bin/llama-voicechat
 export VC_MODEL=/path/to/models/voicechat-q8/runtime/nemotron_voicechat_11b-stt-llm-Q8_0.gguf
 export VC_MMPROJ=/path/to/models/voicechat-q8/runtime/mmproj-voicechat-perception-Q8_0.gguf
 export VC_TTS=/path/to/models/voicechat-q8/runtime/voicechat-tts-Q8_0.gguf   # optional, omit for text-only
-export ROCR_VISIBLE_DEVICES=1   # isolate the target card, as in the R9700 baseline
 
 app/push-to-talk/.venv/bin/python app/push-to-talk/ptt.py
 ```
@@ -61,6 +60,29 @@ stays loaded between turns; press Esc or Ctrl+C to quit.
 `--play-device` (or `$VC_REC_DEVICE` / `$VC_PLAY_DEVICE`) pick a specific
 ALSA device (`arecord -l` / `aplay -l` list what's available); otherwise
 the ALSA default is used.
+
+### GPU selection
+
+Neither client sets `ROCR_VISIBLE_DEVICES` -- it is never invented on your
+behalf, only passed through if you've set it yourself:
+
+- **Single-GPU system**: no `ROCR_VISIBLE_DEVICES` setting required.
+  Normal runtime enumeration plus `--device ROCm0` selects the only
+  visible ROCm device.
+- **Multi-GPU system**: explicitly set `ROCR_VISIBLE_DEVICES` yourself to
+  isolate the card you want, for example (the R9700 reference workstation
+  in `research/baselines/R9700-Q8-M1/` is a dual-GPU example, not a
+  universal requirement):
+  ```
+  export ROCR_VISIBLE_DEVICES=1   # example: isolates the R9700 on that workstation
+  ```
+
+Both clients default `GGML_CUDA_DISABLE_GRAPHS=1` (override by setting it
+yourself before running). This is not a leftover dev-time convenience --
+the R9700-Q8-M1 baseline demonstrated graph-enabled execution crashing on
+this runtime (see `research/baselines/R9700-Q8-M1/README.md`, "Required
+compatibility settings"), so it's a known-good requirement until that's
+fixed upstream.
 
 ### Non-interactive check
 
