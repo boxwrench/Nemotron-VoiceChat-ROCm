@@ -12,10 +12,20 @@ from internal TTS/model-state cancellation). The M4-0 feasibility spike
 needed: M4-0B (chunked audio decode) is RESOLVED -- not a blocker.
 M4-0A (streaming perception encode) is BLOCKER CHARACTERIZED -- exact
 online-equivalent embeddings are not achievable at all given this
-encoder's bidirectional attention, so the open work is choosing among a
+encoder's bidirectional attention, so the open work was choosing among a
 characterized set of tradeoffs (fixed lookahead / bounded sliding
 context / causal encoder change / replay), not closing a gap with more
-compute. Details below.
+compute.
+
+**M4A-1 has since resolved that choice empirically: PROMOTE
+zero-lookahead.** Across an initial sweep and an adversarial follow-up
+targeting speech onset, mid-word, pre/post-pause, silence, and noisy
+regions, future-audio context produced no material change to perception
+embeddings relative to natural frame-to-frame variation. See
+`research/experiments/m4a-1-lookahead-spike/README.md` for the full
+methodology and results; summary under M4-0A below. M4A-2 (measuring
+whether the resulting naive growing-prefix re-encode stays inside the
+80ms causal budget) is next, not yet started.
 
 ## Why this milestone, and why now
 
@@ -370,7 +380,7 @@ experiment was needed for either (the code itself was decisive). No live
 audio, no threading, no ring buffers, no protocol/client changes were
 touched, per scope.
 
-### M4-0A feasibility: BLOCKER CHARACTERIZED
+### M4-0A feasibility: BLOCKER CHARACTERIZED -- selection since resolved by M4A-1
 
 See "Continuous PCM input" above for the full finding: the
 parakeet/FastConformer encoder graph has no cross-call state and uses
@@ -381,8 +391,34 @@ all** without future context or downstream replay -- this isn't a matter
 of picking a big-enough re-encode window and calling it solved. What
 M4-0A produced is a characterization of the tradeoff (fixed lookahead vs.
 bounded sliding context vs. causal encoder modification vs.
-replay/revision), not a resolution of it. Selecting a strategy is
-follow-up work, not decided by this document.
+replay/revision), not a resolution of it.
+
+**M4A-1 (`research/experiments/m4a-1-lookahead-spike/`) has since made
+the selection: PROMOTE zero-lookahead.**
+
+```
+initial sweep:      VC03-long, 3 positions x 9 lookaheads
+adversarial sweep:  VC01-short, VC04-noisy, VC05-pause,
+                     16 transition frames x 6 lookaheads
+                     (onset, mid-word, pre/post-pause, silence, noise)
+
+observed range:      cosine 0.99970-1.00000, RMSE 0.00000-0.00114
+natural adjacent-
+frame cosine:        0.53-0.9994
+
+classification:      PROMOTE zero-lookahead
+```
+
+> Exact online equivalence remains impossible in principle for a
+> bidirectional encoder, but measured future-context dependence is
+> negligible relative to natural embedding variation across all tested
+> speech and boundary conditions.
+
+"Zero-lookahead" means no future audio context is required beyond a
+frame's own arrival -- it does not mean zero latency; the current 80ms
+of audio still has to arrive and the prefix seen so far still has to be
+encoded. What that encode costs, and whether it stays inside the 80ms
+causal budget as conversation length grows, is M4A-2, not yet started.
 
 ### M4-0B feasibility: RESOLVED
 
@@ -404,17 +440,22 @@ productization (AEC), not solve while still validating the core premise.
 
 ## Sequencing (bounded steps, not started by this document)
 
-- **M4A -- continuous input.** Now scoped by M4-0A's finding as a
-  latency/context/equivalence problem, not just a wiring problem: select
-  and validate one of fixed lookahead, bounded sliding context, or a
-  causal encoder modification (M4-0A's characterized tradeoff, above) --
-  exact whole-clip-equivalent embeddings are not achievable online at
-  all, so the choice is about how close an approximation is acceptable
-  and at what latency cost, not about picking a re-encode window size and
-  calling it solved. Only once that's chosen does feeding VoiceChat
-  continuously at its native cadence with no artificial turn boundary
-  become meaningful to build. Headphones required for the first live
-  test.
+- **M4A -- continuous input.**
+  - **M4A-1 (done)** resolved the context-vs-equivalence choice
+    empirically: PROMOTE zero-lookahead (see M4-0A above and
+    `research/experiments/m4a-1-lookahead-spike/`). No future audio
+    context is required for a usably-close perception embedding.
+  - **M4A-2 (next, not started)**: zero-lookahead still means the
+    growing prefix seen so far must be re-encoded on every new frame
+    (no encoder-side state exists). Measure whether that naive
+    re-encode's cost stays inside the 80ms causal budget (see "The
+    live-timeline causality invariant" above) as conversation length
+    grows -- a systems/performance question now, not an open
+    architectural one.
+  - Only once M4A-2 establishes a viable encode strategy does feeding
+    VoiceChat continuously at its native cadence with no artificial
+    turn boundary become meaningful to build. Headphones required for
+    the first live test.
 - **M4B -- incremental output.** Replace "wait for a complete WAV" with
   streaming playback as TTS frames decode. The metric that matters
   changes from complete speech-to-speech time (the R9700 baseline's 4.244s

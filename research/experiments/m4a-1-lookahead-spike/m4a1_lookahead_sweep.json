@@ -1,0 +1,290 @@
+{
+  "early": {
+    "frame_idx": 40,
+    "frame_time_s": 3.28,
+    "points": [
+      {
+        "lookahead_ms": 0,
+        "trunc_duration_s": 3.28,
+        "n_frames_truncated": 42,
+        "cosine_sim": 0.9999033740238263,
+        "rmse": 0.0003972001082769142,
+        "max_err": 0.0015186090022325516,
+        "encode_ms": 313.0,
+        "wall_s": 1.432
+      },
+      {
+        "lookahead_ms": 80,
+        "trunc_duration_s": 3.36,
+        "n_frames_truncated": 43,
+        "cosine_sim": 0.9999033740238263,
+        "rmse": 0.0003972001082769142,
+        "max_err": 0.0015186090022325516,
+        "encode_ms": 318.0,
+        "wall_s": 1.438
+      },
+      {
+        "lookahead_ms": 160,
+        "trunc_duration_s": 3.44,
+        "n_frames_truncated": 44,
+        "cosine_sim": 0.9999033740238263,
+        "rmse": 0.0003972001082769142,
+        "max_err": 0.0015186090022325516,
+        "encode_ms": 313.0,
+        "wall_s": 1.45
+      },
+      {
+        "lookahead_ms": 240,
+        "trunc_duration_s": 3.52,
+        "n_frames_truncated": 45,
+        "cosine_sim": 0.9998535365565909,
+        "rmse": 0.0004902298129093233,
+        "max_err": 0.001715436577796936,
+        "encode_ms": 319.0,
+        "wall_s": 1.47
+      },
+      {
+        "lookahead_ms": 320,
+        "trunc_duration_s": 3.6,
+        "n_frames_truncated": 46,
+        "cosine_sim": 0.9998535365565909,
+        "rmse": 0.0004902298129093233,
+        "max_err": 0.001715436577796936,
+        "encode_ms": 311.0,
+        "wall_s": 1.44
+      },
+      {
+        "lookahead_ms": 480,
+        "trunc_duration_s": 3.76,
+        "n_frames_truncated": 48,
+        "cosine_sim": 0.9999077567832875,
+        "rmse": 0.00038920618780765106,
+        "max_err": 0.001371137797832489,
+        "encode_ms": 322.0,
+        "wall_s": 1.44
+      },
+      {
+        "lookahead_ms": 640,
+        "trunc_duration_s": 3.92,
+        "n_frames_truncated": 50,
+        "cosine_sim": 0.9999077567832875,
+        "rmse": 0.00038920618780765106,
+        "max_err": 0.001371137797832489,
+        "encode_ms": 320.0,
+        "wall_s": 1.441
+      },
+      {
+        "lookahead_ms": 1000,
+        "trunc_duration_s": 4.28,
+        "n_frames_truncated": 55,
+        "cosine_sim": 0.9999077567832875,
+        "rmse": 0.00038920618780765106,
+        "max_err": 0.001371137797832489,
+        "encode_ms": 306.0,
+        "wall_s": 1.418
+      },
+      {
+        "lookahead_ms": 2000,
+        "trunc_duration_s": 5.28,
+        "n_frames_truncated": 67,
+        "cosine_sim": 0.9999091914985632,
+        "rmse": 0.000385094372630277,
+        "max_err": 0.001481134444475174,
+        "encode_ms": 310.0,
+        "wall_s": 1.427
+      }
+    ]
+  },
+  "mid": {
+    "frame_idx": 175,
+    "frame_time_s": 14.08,
+    "points": [
+      {
+        "lookahead_ms": 0,
+        "trunc_duration_s": 14.08,
+        "n_frames_truncated": 177,
+        "cosine_sim": 0.9999151084426924,
+        "rmse": 0.00039705482328956866,
+        "max_err": 0.0015831482596695423,
+        "encode_ms": 332.0,
+        "wall_s": 1.459
+      },
+      {
+        "lookahead_ms": 80,
+        "trunc_duration_s": 14.16,
+        "n_frames_truncated": 178,
+        "cosine_sim": 0.9999151084426924,
+        "rmse": 0.00039705482328956866,
+        "max_err": 0.0015831482596695423,
+        "encode_ms": 348.0,
+        "wall_s": 1.462
+      },
+      {
+        "lookahead_ms": 160,
+        "trunc_duration_s": 14.24,
+        "n_frames_truncated": 179,
+        "cosine_sim": 0.9999151084426924,
+        "rmse": 0.00039705482328956866,
+        "max_err": 0.0015831482596695423,
+        "encode_ms": 333.0,
+        "wall_s": 1.455
+      },
+      {
+        "lookahead_ms": 240,
+        "trunc_duration_s": 14.32,
+        "n_frames_truncated": 180,
+        "cosine_sim": 0.9999151084426924,
+        "rmse": 0.00039705482328956866,
+        "max_err": 0.0015831482596695423,
+        "encode_ms": 335.0,
+        "wall_s": 1.465
+      },
+      {
+        "lookahead_ms": 320,
+        "trunc_duration_s": 14.4,
+        "n_frames_truncated": 181,
+        "cosine_sim": 0.9998716899847953,
+        "rmse": 0.0004894229594753672,
+        "max_err": 0.0021731164306402206,
+        "encode_ms": 345.0,
+        "wall_s": 1.473
+      },
+      {
+        "lookahead_ms": 480,
+        "trunc_duration_s": 14.56,
+        "n_frames_truncated": 183,
+        "cosine_sim": 0.9998716899847953,
+        "rmse": 0.0004894229594753672,
+        "max_err": 0.0021731164306402206,
+        "encode_ms": 336.0,
+        "wall_s": 1.461
+      },
+      {
+        "lookahead_ms": 640,
+        "trunc_duration_s": 14.72,
+        "n_frames_truncated": 185,
+        "cosine_sim": 0.9998716899847953,
+        "rmse": 0.0004894229594753672,
+        "max_err": 0.0021731164306402206,
+        "encode_ms": 337.0,
+        "wall_s": 1.463
+      },
+      {
+        "lookahead_ms": 1000,
+        "trunc_duration_s": 15.08,
+        "n_frames_truncated": 190,
+        "cosine_sim": 0.9998716899847953,
+        "rmse": 0.0004894229594753672,
+        "max_err": 0.0021731164306402206,
+        "encode_ms": 343.0,
+        "wall_s": 1.461
+      },
+      {
+        "lookahead_ms": 2000,
+        "trunc_duration_s": 16.08,
+        "n_frames_truncated": 202,
+        "cosine_sim": 0.9998716899847953,
+        "rmse": 0.0004894229594753672,
+        "max_err": 0.0021731164306402206,
+        "encode_ms": 344.0,
+        "wall_s": 1.466
+      }
+    ]
+  },
+  "late": {
+    "frame_idx": 300,
+    "frame_time_s": 24.08,
+    "points": [
+      {
+        "lookahead_ms": 0,
+        "trunc_duration_s": 24.08,
+        "n_frames_truncated": 302,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 360.0,
+        "wall_s": 1.485
+      },
+      {
+        "lookahead_ms": 80,
+        "trunc_duration_s": 24.16,
+        "n_frames_truncated": 303,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 373.0,
+        "wall_s": 1.502
+      },
+      {
+        "lookahead_ms": 160,
+        "trunc_duration_s": 24.24,
+        "n_frames_truncated": 304,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 357.0,
+        "wall_s": 1.493
+      },
+      {
+        "lookahead_ms": 240,
+        "trunc_duration_s": 24.32,
+        "n_frames_truncated": 305,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 377.0,
+        "wall_s": 1.532
+      },
+      {
+        "lookahead_ms": 320,
+        "trunc_duration_s": 24.4,
+        "n_frames_truncated": 306,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 363.0,
+        "wall_s": 1.482
+      },
+      {
+        "lookahead_ms": 480,
+        "trunc_duration_s": 24.56,
+        "n_frames_truncated": 308,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 368.0,
+        "wall_s": 1.497
+      },
+      {
+        "lookahead_ms": 640,
+        "trunc_duration_s": 24.72,
+        "n_frames_truncated": 310,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 368.0,
+        "wall_s": 1.499
+      },
+      {
+        "lookahead_ms": 1000,
+        "trunc_duration_s": 25.08,
+        "n_frames_truncated": 315,
+        "cosine_sim": 0.9999299314241415,
+        "rmse": 0.0003913314592747778,
+        "max_err": 0.0014126775786280632,
+        "encode_ms": 368.0,
+        "wall_s": 1.5
+      },
+      {
+        "lookahead_ms": 2000,
+        "trunc_duration_s": 26.08,
+        "n_frames_truncated": 327,
+        "cosine_sim": 0.9999999999999998,
+        "rmse": 0.0,
+        "max_err": 0.0,
+        "encode_ms": 390.0,
+        "wall_s": 1.512
+      }
+    ]
+  }
+}

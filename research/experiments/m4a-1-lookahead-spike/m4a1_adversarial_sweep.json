@@ -1,0 +1,1162 @@
+{
+  "sweep": {
+    "VC01-short.wav": {
+      "before_onset": {
+        "frame_idx": 2,
+        "frame_time_s": 0.24,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.24,
+            "n_frames_truncated": 4,
+            "cosine_sim": 0.9997315734939349,
+            "rmse": 0.0005634857445857264,
+            "max_err": 0.002162192016839981,
+            "encode_ms": 307.0,
+            "wall_s": 1.437
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.32,
+            "n_frames_truncated": 5,
+            "cosine_sim": 0.9999374921003054,
+            "rmse": 0.00026572044076619687,
+            "max_err": 0.0010812832042574883,
+            "encode_ms": 306.0,
+            "wall_s": 1.45
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.9999151377401498,
+            "rmse": 0.00031065149762346317,
+            "max_err": 0.0014201607555150986,
+            "encode_ms": 323.0,
+            "wall_s": 1.456
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.56,
+            "n_frames_truncated": 8,
+            "cosine_sim": 0.9999151377401498,
+            "rmse": 0.00031065149762346317,
+            "max_err": 0.0014201607555150986,
+            "encode_ms": 321.0,
+            "wall_s": 1.46
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.88,
+            "n_frames_truncated": 12,
+            "cosine_sim": 0.9999244427820881,
+            "rmse": 0.0002948179122942956,
+            "max_err": 0.001113850623369217,
+            "encode_ms": 311.0,
+            "wall_s": 1.436
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.24,
+            "n_frames_truncated": 17,
+            "cosine_sim": 1.0000000000000002,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 296.0,
+            "wall_s": 1.423
+          }
+        ]
+      },
+      "first_voiced": {
+        "frame_idx": 3,
+        "frame_time_s": 0.32,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.32,
+            "n_frames_truncated": 5,
+            "cosine_sim": 0.9999220002883196,
+            "rmse": 0.00029879600380384276,
+            "max_err": 0.0010819993913173676,
+            "encode_ms": 314.0,
+            "wall_s": 1.435
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.9999398765010988,
+            "rmse": 0.0002625427380159376,
+            "max_err": 0.0010868720710277557,
+            "encode_ms": 312.0,
+            "wall_s": 1.437
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.48,
+            "n_frames_truncated": 7,
+            "cosine_sim": 0.9999398765010988,
+            "rmse": 0.0002625427380159376,
+            "max_err": 0.0010868720710277557,
+            "encode_ms": 317.0,
+            "wall_s": 1.44
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.64,
+            "n_frames_truncated": 9,
+            "cosine_sim": 0.9999241325968744,
+            "rmse": 0.0002990732086851965,
+            "max_err": 0.0010808371007442474,
+            "encode_ms": 301.0,
+            "wall_s": 1.422
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.96,
+            "n_frames_truncated": 13,
+            "cosine_sim": 0.9999365835149532,
+            "rmse": 0.00027103489717019504,
+            "max_err": 0.0010775607079267502,
+            "encode_ms": 313.0,
+            "wall_s": 1.434
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.32,
+            "n_frames_truncated": 18,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 299.0,
+            "wall_s": 1.449
+          }
+        ]
+      },
+      "mid_word": {
+        "frame_idx": 12,
+        "frame_time_s": 1.04,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.04,
+            "n_frames_truncated": 14,
+            "cosine_sim": 0.9997696041539765,
+            "rmse": 0.0009968969415505295,
+            "max_err": 0.003896765410900116,
+            "encode_ms": 309.0,
+            "wall_s": 1.425
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.12,
+            "n_frames_truncated": 15,
+            "cosine_sim": 0.9997696041539765,
+            "rmse": 0.0009968969415505295,
+            "max_err": 0.003896765410900116,
+            "encode_ms": 306.0,
+            "wall_s": 1.436
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.2,
+            "n_frames_truncated": 16,
+            "cosine_sim": 0.9998963262578702,
+            "rmse": 0.0006065718607197339,
+            "max_err": 0.0024363379925489426,
+            "encode_ms": 304.0,
+            "wall_s": 1.435
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 1.36,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.9999125765092743,
+            "rmse": 0.0005553266228394291,
+            "max_err": 0.0019698143005371094,
+            "encode_ms": 301.0,
+            "wall_s": 1.435
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 1.68,
+            "n_frames_truncated": 22,
+            "cosine_sim": 0.9999125765092743,
+            "rmse": 0.0005553266228394291,
+            "max_err": 0.0019698143005371094,
+            "encode_ms": 307.0,
+            "wall_s": 1.447
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.04,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.9998271471335367,
+            "rmse": 0.0008536997065441201,
+            "max_err": 0.0029424279928207397,
+            "encode_ms": 311.0,
+            "wall_s": 1.431
+          }
+        ]
+      },
+      "sentence_boundary_end": {
+        "frame_idx": 21,
+        "frame_time_s": 1.76,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.76,
+            "n_frames_truncated": 23,
+            "cosine_sim": 0.9998977877086466,
+            "rmse": 0.0004989953217859355,
+            "max_err": 0.0017161760479211807,
+            "encode_ms": 308.0,
+            "wall_s": 1.448
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.84,
+            "n_frames_truncated": 24,
+            "cosine_sim": 0.9998977877086466,
+            "rmse": 0.0004989953217859355,
+            "max_err": 0.0017161760479211807,
+            "encode_ms": 317.0,
+            "wall_s": 1.457
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.92,
+            "n_frames_truncated": 25,
+            "cosine_sim": 0.9999014341005259,
+            "rmse": 0.0004926405702991494,
+            "max_err": 0.0018053073436021805,
+            "encode_ms": 305.0,
+            "wall_s": 1.434
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 2.08,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.9999014341005259,
+            "rmse": 0.0004926405702991494,
+            "max_err": 0.0018053073436021805,
+            "encode_ms": 316.0,
+            "wall_s": 1.448
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 2.4,
+            "n_frames_truncated": 31,
+            "cosine_sim": 0.9997787151688802,
+            "rmse": 0.0007511262707481973,
+            "max_err": 0.002960696816444397,
+            "encode_ms": 318.0,
+            "wall_s": 1.447
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.76,
+            "n_frames_truncated": 36,
+            "cosine_sim": 1.0000000000000002,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 306.0,
+            "wall_s": 1.448
+          }
+        ]
+      }
+    },
+    "VC04-noisy.wav": {
+      "noisy_before_onset": {
+        "frame_idx": 0,
+        "frame_time_s": 0.08,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.08,
+            "n_frames_truncated": 2,
+            "cosine_sim": 0.9999872618416323,
+            "rmse": 0.00013101882402105378,
+            "max_err": 0.00047767721116542816,
+            "encode_ms": 316.0,
+            "wall_s": 1.448
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.16,
+            "n_frames_truncated": 3,
+            "cosine_sim": 0.9999872618416323,
+            "rmse": 0.00013101882402105378,
+            "max_err": 0.00047767721116542816,
+            "encode_ms": 316.0,
+            "wall_s": 1.448
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.24,
+            "n_frames_truncated": 4,
+            "cosine_sim": 0.9999872618416323,
+            "rmse": 0.00013101882402105378,
+            "max_err": 0.00047767721116542816,
+            "encode_ms": 303.0,
+            "wall_s": 1.446
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.9999878056125993,
+            "rmse": 0.00012810928300522055,
+            "max_err": 0.0004518181085586548,
+            "encode_ms": 322.0,
+            "wall_s": 1.455
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.72,
+            "n_frames_truncated": 10,
+            "cosine_sim": 0.9999899332812214,
+            "rmse": 0.00011641038300307825,
+            "max_err": 0.0004119640216231346,
+            "encode_ms": 312.0,
+            "wall_s": 1.44
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.08,
+            "n_frames_truncated": 15,
+            "cosine_sim": 0.9999899332812214,
+            "rmse": 0.00011641038300307825,
+            "max_err": 0.0004119640216231346,
+            "encode_ms": 307.0,
+            "wall_s": 1.449
+          }
+        ]
+      },
+      "noisy_first_voiced": {
+        "frame_idx": 3,
+        "frame_time_s": 0.32,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.32,
+            "n_frames_truncated": 5,
+            "cosine_sim": 0.9999561233554733,
+            "rmse": 0.00020535076765600642,
+            "max_err": 0.0007157307118177414,
+            "encode_ms": 317.0,
+            "wall_s": 1.482
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.9999592387908303,
+            "rmse": 0.00019724383634164288,
+            "max_err": 0.0007546674460172653,
+            "encode_ms": 329.0,
+            "wall_s": 1.479
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.48,
+            "n_frames_truncated": 7,
+            "cosine_sim": 0.9999592387908303,
+            "rmse": 0.00019724383634164288,
+            "max_err": 0.0007546674460172653,
+            "encode_ms": 321.0,
+            "wall_s": 1.467
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.64,
+            "n_frames_truncated": 9,
+            "cosine_sim": 0.9999621142373116,
+            "rmse": 0.00019025956716651568,
+            "max_err": 0.0008189612999558449,
+            "encode_ms": 314.0,
+            "wall_s": 1.458
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.96,
+            "n_frames_truncated": 13,
+            "cosine_sim": 0.9999625491188086,
+            "rmse": 0.00018898124562540582,
+            "max_err": 0.0006894674152135849,
+            "encode_ms": 311.0,
+            "wall_s": 1.449
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.32,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.9999999999999998,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 309.0,
+            "wall_s": 1.451
+          }
+        ]
+      },
+      "noisy_mid_word": {
+        "frame_idx": 12,
+        "frame_time_s": 1.04,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.04,
+            "n_frames_truncated": 14,
+            "cosine_sim": 0.9998815829696713,
+            "rmse": 0.0004896152842997216,
+            "max_err": 0.0019128303974866867,
+            "encode_ms": 302.0,
+            "wall_s": 1.433
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.12,
+            "n_frames_truncated": 15,
+            "cosine_sim": 0.9998815829696713,
+            "rmse": 0.0004896152842997216,
+            "max_err": 0.0019128303974866867,
+            "encode_ms": 300.0,
+            "wall_s": 1.428
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.2,
+            "n_frames_truncated": 16,
+            "cosine_sim": 0.999892175405695,
+            "rmse": 0.00047106081801103465,
+            "max_err": 0.0018416465318296105,
+            "encode_ms": 309.0,
+            "wall_s": 1.452
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 1.36,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.9998940603877098,
+            "rmse": 0.00046042464581244017,
+            "max_err": 0.0018918989226222038,
+            "encode_ms": 307.0,
+            "wall_s": 1.44
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 1.68,
+            "n_frames_truncated": 22,
+            "cosine_sim": 0.9998940603877098,
+            "rmse": 0.00046042464581244017,
+            "max_err": 0.0018918989226222038,
+            "encode_ms": 317.0,
+            "wall_s": 1.454
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.04,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.999854759796332,
+            "rmse": 0.0005507924801847512,
+            "max_err": 0.0021091103553771973,
+            "encode_ms": 310.0,
+            "wall_s": 1.466
+          }
+        ]
+      },
+      "noisy_sentence_boundary_end": {
+        "frame_idx": 21,
+        "frame_time_s": 1.76,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.76,
+            "n_frames_truncated": 23,
+            "cosine_sim": 0.9999400870303568,
+            "rmse": 0.0003702164344306673,
+            "max_err": 0.0014477185904979706,
+            "encode_ms": 313.0,
+            "wall_s": 1.452
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.84,
+            "n_frames_truncated": 24,
+            "cosine_sim": 0.9999400870303568,
+            "rmse": 0.0003702164344306673,
+            "max_err": 0.0014477185904979706,
+            "encode_ms": 311.0,
+            "wall_s": 1.456
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.92,
+            "n_frames_truncated": 25,
+            "cosine_sim": 0.9999294776903082,
+            "rmse": 0.0004024364204725965,
+            "max_err": 0.0014444459229707718,
+            "encode_ms": 322.0,
+            "wall_s": 1.462
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 2.08,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.9999294776903082,
+            "rmse": 0.0004024364204725965,
+            "max_err": 0.0014444459229707718,
+            "encode_ms": 313.0,
+            "wall_s": 1.449
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 2.4,
+            "n_frames_truncated": 31,
+            "cosine_sim": 0.9999117468947062,
+            "rmse": 0.0004636348264416959,
+            "max_err": 0.0016355514526367188,
+            "encode_ms": 315.0,
+            "wall_s": 1.449
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.76,
+            "n_frames_truncated": 36,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 311.0,
+            "wall_s": 1.446
+          }
+        ]
+      },
+      "noisy_region_only": {
+        "frame_idx": 25,
+        "frame_time_s": 2.08,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 2.08,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.9999358764983483,
+            "rmse": 0.0003118209761393369,
+            "max_err": 0.0012503350153565407,
+            "encode_ms": 311.0,
+            "wall_s": 1.44
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 2.16,
+            "n_frames_truncated": 28,
+            "cosine_sim": 0.9999358764983483,
+            "rmse": 0.0003118209761393369,
+            "max_err": 0.0012503350153565407,
+            "encode_ms": 309.0,
+            "wall_s": 1.435
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 2.24,
+            "n_frames_truncated": 29,
+            "cosine_sim": 0.9999164972604231,
+            "rmse": 0.0003551555735650376,
+            "max_err": 0.001327410340309143,
+            "encode_ms": 314.0,
+            "wall_s": 1.461
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 2.4,
+            "n_frames_truncated": 31,
+            "cosine_sim": 0.9999356888670883,
+            "rmse": 0.00031258845628103263,
+            "max_err": 0.0012065395712852478,
+            "encode_ms": 310.0,
+            "wall_s": 1.469
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 2.72,
+            "n_frames_truncated": 35,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 321.0,
+            "wall_s": 1.449
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 3.08,
+            "n_frames_truncated": 38,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 321.0,
+            "wall_s": 1.455
+          }
+        ]
+      }
+    },
+    "VC05-pause.wav": {
+      "before_onset": {
+        "frame_idx": 2,
+        "frame_time_s": 0.24,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.24,
+            "n_frames_truncated": 4,
+            "cosine_sim": 0.9997552201579408,
+            "rmse": 0.0005379130202537925,
+            "max_err": 0.002046961337327957,
+            "encode_ms": 308.0,
+            "wall_s": 1.439
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.32,
+            "n_frames_truncated": 5,
+            "cosine_sim": 0.9999418497392951,
+            "rmse": 0.00025675886637608524,
+            "max_err": 0.0009022168815135956,
+            "encode_ms": 316.0,
+            "wall_s": 1.447
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.999932145220285,
+            "rmse": 0.0002774544858370086,
+            "max_err": 0.0010565882548689842,
+            "encode_ms": 314.0,
+            "wall_s": 1.451
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.56,
+            "n_frames_truncated": 8,
+            "cosine_sim": 0.999932145220285,
+            "rmse": 0.0002774544858370086,
+            "max_err": 0.0010565882548689842,
+            "encode_ms": 317.0,
+            "wall_s": 1.455
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.88,
+            "n_frames_truncated": 12,
+            "cosine_sim": 0.9999043115664061,
+            "rmse": 0.0003318947598540294,
+            "max_err": 0.0014177560806274414,
+            "encode_ms": 309.0,
+            "wall_s": 1.435
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.24,
+            "n_frames_truncated": 17,
+            "cosine_sim": 0.9999376040473117,
+            "rmse": 0.0002649778638662201,
+            "max_err": 0.0010089855641126633,
+            "encode_ms": 310.0,
+            "wall_s": 1.444
+          }
+        ]
+      },
+      "first_voiced": {
+        "frame_idx": 3,
+        "frame_time_s": 0.32,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.32,
+            "n_frames_truncated": 5,
+            "cosine_sim": 0.9999306768104516,
+            "rmse": 0.0002851767643528416,
+            "max_err": 0.0009604394435882568,
+            "encode_ms": 319.0,
+            "wall_s": 1.456
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.4,
+            "n_frames_truncated": 6,
+            "cosine_sim": 0.9999369769001577,
+            "rmse": 0.0002707544859659682,
+            "max_err": 0.0010098125785589218,
+            "encode_ms": 310.0,
+            "wall_s": 1.45
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 0.48,
+            "n_frames_truncated": 7,
+            "cosine_sim": 0.9999369769001577,
+            "rmse": 0.0002707544859659682,
+            "max_err": 0.0010098125785589218,
+            "encode_ms": 326.0,
+            "wall_s": 1.48
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 0.64,
+            "n_frames_truncated": 9,
+            "cosine_sim": 0.9999248574600005,
+            "rmse": 0.0002996283518828789,
+            "max_err": 0.001392904669046402,
+            "encode_ms": 312.0,
+            "wall_s": 1.462
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 0.96,
+            "n_frames_truncated": 13,
+            "cosine_sim": 0.9998779129644133,
+            "rmse": 0.00038104411692652736,
+            "max_err": 0.001421937718987465,
+            "encode_ms": 309.0,
+            "wall_s": 1.442
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.32,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.999913502296689,
+            "rmse": 0.0003158032433224881,
+            "max_err": 0.0011283289641141891,
+            "encode_ms": 308.0,
+            "wall_s": 1.444
+          }
+        ]
+      },
+      "mid_word_seg1": {
+        "frame_idx": 10,
+        "frame_time_s": 0.88,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 0.88,
+            "n_frames_truncated": 12,
+            "cosine_sim": 0.9997591279332074,
+            "rmse": 0.0009933315914310331,
+            "max_err": 0.0038260072469711304,
+            "encode_ms": 312.0,
+            "wall_s": 1.445
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 0.96,
+            "n_frames_truncated": 13,
+            "cosine_sim": 0.9997089643186822,
+            "rmse": 0.001044082249909664,
+            "max_err": 0.0038183405995368958,
+            "encode_ms": 307.0,
+            "wall_s": 1.462
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.04,
+            "n_frames_truncated": 14,
+            "cosine_sim": 0.9997089643186822,
+            "rmse": 0.001044082249909664,
+            "max_err": 0.0038183405995368958,
+            "encode_ms": 315.0,
+            "wall_s": 1.456
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 1.2,
+            "n_frames_truncated": 16,
+            "cosine_sim": 0.9997805016576954,
+            "rmse": 0.0009249000077715782,
+            "max_err": 0.003223007544875145,
+            "encode_ms": 305.0,
+            "wall_s": 1.472
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 1.52,
+            "n_frames_truncated": 20,
+            "cosine_sim": 0.9997162797574835,
+            "rmse": 0.001137451090875815,
+            "max_err": 0.004432499408721924,
+            "encode_ms": 314.0,
+            "wall_s": 1.468
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 1.88,
+            "n_frames_truncated": 25,
+            "cosine_sim": 0.9996996294554403,
+            "rmse": 0.0010999880626813565,
+            "max_err": 0.0039802249521017075,
+            "encode_ms": 315.0,
+            "wall_s": 1.445
+          }
+        ]
+      },
+      "before_pause": {
+        "frame_idx": 12,
+        "frame_time_s": 1.04,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.04,
+            "n_frames_truncated": 14,
+            "cosine_sim": 0.9999465697963472,
+            "rmse": 0.0004439163751387788,
+            "max_err": 0.001597503200173378,
+            "encode_ms": 300.0,
+            "wall_s": 1.441
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.12,
+            "n_frames_truncated": 15,
+            "cosine_sim": 0.9999465697963472,
+            "rmse": 0.0004439163751387788,
+            "max_err": 0.001597503200173378,
+            "encode_ms": 301.0,
+            "wall_s": 1.43
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.2,
+            "n_frames_truncated": 16,
+            "cosine_sim": 0.999946870780557,
+            "rmse": 0.00044431787806599866,
+            "max_err": 0.0016513839364051819,
+            "encode_ms": 304.0,
+            "wall_s": 1.425
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 1.36,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.999932823263997,
+            "rmse": 0.0005041071765230452,
+            "max_err": 0.001971885561943054,
+            "encode_ms": 304.0,
+            "wall_s": 1.421
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 1.68,
+            "n_frames_truncated": 22,
+            "cosine_sim": 0.999932823263997,
+            "rmse": 0.0005041071765230452,
+            "max_err": 0.001971885561943054,
+            "encode_ms": 310.0,
+            "wall_s": 1.46
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.04,
+            "n_frames_truncated": 27,
+            "cosine_sim": 0.9999375384387865,
+            "rmse": 0.00048166223044597366,
+            "max_err": 0.0017387419939041138,
+            "encode_ms": 314.0,
+            "wall_s": 1.457
+          }
+        ]
+      },
+      "first_silence": {
+        "frame_idx": 14,
+        "frame_time_s": 1.2,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 1.2,
+            "n_frames_truncated": 16,
+            "cosine_sim": 0.9999193740586632,
+            "rmse": 0.00042393408070411683,
+            "max_err": 0.0016831178218126297,
+            "encode_ms": 304.0,
+            "wall_s": 1.452
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 1.28,
+            "n_frames_truncated": 17,
+            "cosine_sim": 0.999921668160985,
+            "rmse": 0.00041827508598424296,
+            "max_err": 0.0017673000693321228,
+            "encode_ms": 300.0,
+            "wall_s": 1.446
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 1.36,
+            "n_frames_truncated": 18,
+            "cosine_sim": 0.999921668160985,
+            "rmse": 0.00041827508598424296,
+            "max_err": 0.0017673000693321228,
+            "encode_ms": 313.0,
+            "wall_s": 1.446
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 1.52,
+            "n_frames_truncated": 20,
+            "cosine_sim": 0.999921668160985,
+            "rmse": 0.00041827508598424296,
+            "max_err": 0.0017673000693321228,
+            "encode_ms": 311.0,
+            "wall_s": 1.455
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 1.84,
+            "n_frames_truncated": 24,
+            "cosine_sim": 0.999921668160985,
+            "rmse": 0.00041827508598424296,
+            "max_err": 0.0017673000693321228,
+            "encode_ms": 337.0,
+            "wall_s": 1.495
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 2.2,
+            "n_frames_truncated": 29,
+            "cosine_sim": 0.999921668160985,
+            "rmse": 0.00041827508598424296,
+            "max_err": 0.0017673000693321228,
+            "encode_ms": 311.0,
+            "wall_s": 1.472
+          }
+        ]
+      },
+      "after_pause": {
+        "frame_idx": 66,
+        "frame_time_s": 5.36,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 5.36,
+            "n_frames_truncated": 68,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 330.0,
+            "wall_s": 1.461
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 5.44,
+            "n_frames_truncated": 69,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 330.0,
+            "wall_s": 1.47
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 5.52,
+            "n_frames_truncated": 70,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 334.0,
+            "wall_s": 1.486
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 5.68,
+            "n_frames_truncated": 72,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 325.0,
+            "wall_s": 1.452
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 6.0,
+            "n_frames_truncated": 76,
+            "cosine_sim": 0.9999313800012276,
+            "rmse": 0.0002695169686561875,
+            "max_err": 0.0010576844215393066,
+            "encode_ms": 327.0,
+            "wall_s": 1.451
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 6.36,
+            "n_frames_truncated": 81,
+            "cosine_sim": 1.0,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 328.0,
+            "wall_s": 1.508
+          }
+        ]
+      },
+      "sentence_boundary_end": {
+        "frame_idx": 83,
+        "frame_time_s": 6.72,
+        "points": [
+          {
+            "lookahead_ms": 0,
+            "trunc_duration_s": 6.72,
+            "n_frames_truncated": 85,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 323.0,
+            "wall_s": 1.475
+          },
+          {
+            "lookahead_ms": 80,
+            "trunc_duration_s": 6.8,
+            "n_frames_truncated": 86,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 330.0,
+            "wall_s": 1.47
+          },
+          {
+            "lookahead_ms": 160,
+            "trunc_duration_s": 6.88,
+            "n_frames_truncated": 87,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 331.0,
+            "wall_s": 1.464
+          },
+          {
+            "lookahead_ms": 320,
+            "trunc_duration_s": 7.04,
+            "n_frames_truncated": 89,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 331.0,
+            "wall_s": 1.472
+          },
+          {
+            "lookahead_ms": 640,
+            "trunc_duration_s": 7.36,
+            "n_frames_truncated": 93,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 324.0,
+            "wall_s": 1.451
+          },
+          {
+            "lookahead_ms": 1000,
+            "trunc_duration_s": 7.72,
+            "n_frames_truncated": 98,
+            "cosine_sim": 0.9999999999999999,
+            "rmse": 0.0,
+            "max_err": 0.0,
+            "encode_ms": 329.0,
+            "wall_s": 1.459
+          }
+        ]
+      }
+    }
+  },
+  "calibration": {
+    "VC01-short.wav": [
+      {
+        "frame_idx": 2,
+        "cos_vs_prev": 0.6374811774838,
+        "cos_vs_next": 0.9845194910409234
+      },
+      {
+        "frame_idx": 3,
+        "cos_vs_prev": 0.9845194910409234,
+        "cos_vs_next": 0.8980187288985844
+      },
+      {
+        "frame_idx": 12,
+        "cos_vs_prev": 0.5349365808231734,
+        "cos_vs_next": 0.8665403903905572
+      },
+      {
+        "frame_idx": 21,
+        "cos_vs_prev": 0.9139315675918463,
+        "cos_vs_next": 0.70650989657663
+      }
+    ],
+    "VC04-noisy.wav": [
+      {
+        "frame_idx": 3,
+        "cos_vs_prev": 0.9089197929694934,
+        "cos_vs_next": 0.9705989378539948
+      },
+      {
+        "frame_idx": 12,
+        "cos_vs_prev": 0.7204141416528531,
+        "cos_vs_next": 0.6735671803748606
+      },
+      {
+        "frame_idx": 21,
+        "cos_vs_prev": 0.8966888453330811,
+        "cos_vs_next": 0.6867416999247563
+      },
+      {
+        "frame_idx": 25,
+        "cos_vs_prev": 0.8279459233686908,
+        "cos_vs_next": 0.9796325287480795
+      }
+    ],
+    "VC05-pause.wav": [
+      {
+        "frame_idx": 2,
+        "cos_vs_prev": 0.6381737458789741,
+        "cos_vs_next": 0.9688209965979678
+      },
+      {
+        "frame_idx": 3,
+        "cos_vs_prev": 0.9688209965979678,
+        "cos_vs_next": 0.9112579303924406
+      },
+      {
+        "frame_idx": 10,
+        "cos_vs_prev": 0.6543355966071394,
+        "cos_vs_next": 0.634235609074811
+      },
+      {
+        "frame_idx": 12,
+        "cos_vs_prev": 0.9487784143110075,
+        "cos_vs_next": 0.9477386710701743
+      },
+      {
+        "frame_idx": 14,
+        "cos_vs_prev": 0.6247244438782127,
+        "cos_vs_next": 0.9612430461682834
+      },
+      {
+        "frame_idx": 66,
+        "cos_vs_prev": 0.9994146600399062,
+        "cos_vs_next": 0.8071750510816863
+      },
+      {
+        "frame_idx": 83,
+        "cos_vs_prev": 0.9626998864392786,
+        "cos_vs_next": 0.8202679796016417
+      }
+    ]
+  },
+  "lookaheads_ms": [
+    0,
+    80,
+    160,
+    320,
+    640,
+    1000
+  ],
+  "extended_lookaheads_ms": [
+    1500,
+    2000,
+    3000
+  ]
+}
