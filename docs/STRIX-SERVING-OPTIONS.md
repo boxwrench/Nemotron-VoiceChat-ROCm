@@ -66,15 +66,14 @@ Nemotron conversation timeline
           └── speech text token / delta -> speech renderer
 ```
 
-The existing runtime nevertheless uses native TTS state for speech-lifecycle
-control:
+The existing runtime nevertheless uses native TTS state for speech-progress and
+speech-lifecycle control. In particular:
 
-```text
-text channel may run far ahead of audible speech
-EOS is held until speech settles
-TTS quiet/silence state participates in drain completion
-queued text represents speech not yet spoken
-```
+- the text stream can run far ahead of audible speech;
+- EOS may be delayed while remaining speech finishes;
+- the runtime tracks whether speech is still active;
+- queued text can represent speech that has not yet been heard; and
+- the end of a response includes a speech-drain phase.
 
 The replacement boundary must preserve the behavior represented by those facts
 without requiring the rest of VoiceChat to know about
@@ -420,13 +419,33 @@ Nemotron conversational timeline
                         │
                         ▼
                  speech renderer
+                        ├── incremental PCM / audio
                         │
-                        ▼
-                 streaming PCM
+                        └── speech state
+                             - started
+                             - currently speaking
+                             - finished / drained
+                             - stop pending playback
+                             - reset renderer state
+```
+
+The intended future structure is one speech-renderer interface with the native
+implementation retained as the control and an alternate renderer behind the
+same boundary:
+
+```text
+Nemotron conversational timeline
+            │
+            ▼
+     speech-renderer interface
+         /             \
+        /               \
+native VoiceChat      alternate renderer
+TTS + codec            Lemonade / other
 ```
 
 The renderer also exposes lifecycle state/events. Exact API names are not
-selected yet; this is a behavioral contract only:
+selected yet; this is documentation only, not an API selection:
 
 ```text
 started
@@ -444,9 +463,9 @@ Minimum requirements:
 2. Begin PCM output incrementally rather than waiting for a complete utterance.
 3. Expose `started` and `speaking` state so the timeline can distinguish
    accepted text from audible/rendered speech.
-4. Expose `settled` / `drained` when queued speech has actually been rendered
-   and the pending PCM has drained. EOS handling must not rely on a native
-   silence helper.
+4. Expose `settled` / `drained` when all accepted speech has actually finished
+   rendering and pending PCM has drained. EOS and the response's speech-drain
+   phase must not rely on a native silence helper.
 5. Support fast `cancel_pending_audio` when the user interrupts. Define what
    happens to text already accepted by the renderer but not yet spoken: discard,
    preserve, replay, or another explicit policy.
