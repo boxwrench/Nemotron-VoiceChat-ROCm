@@ -1,0 +1,23 @@
+validation_date=2026-08-24
+platform=AMD Strix Halo / Radeon 8060S / gfx1151
+cpu=AMD Ryzen AI MAX+ 395 w/ Radeon 8060S
+cpu_threads=32
+system_memory=121 GiB
+os=Linux Mint 22.3
+kernel=6.17.0-35-generic
+rocm=7.2.2
+hip=7.2.53211-671d39a71e
+compiler=AMD clang 22.0.0git
+runtime_source_commit=38a76719e
+build_type=Release
+ggml_hip=ON
+gpu_targets=gfx1151
+gpu_pool_reported_by_ggml=114688 MiB UMA
+runtime_device=ROCm0
+runtime_settings=--no-warmup GGML_CUDA_DISABLE_GRAPHS=1 VC_NO_BARGE=1 VC_FORCE_BOS=1 --split-mode none --gpu-layers all --temp 0 --seed 42
+result=BUILD PASS; LOAD PASS; STT PASS; TTS PASS; S2S PASS
+classification=VALIDATED — known perception/CLIP CPU fallback
+known_qualification=ROCm perception/CLIP coverage lacks CONV_2D_DW and UNARY; CPU backend/scheduler support is used for part of perception
+parked_lead=LEAD-GFX1151-0001
+inference_context=GPU-visible ROCm0; captured logs show ggml_cuda_init finding gfx1151
+automation_shell_note=/dev/kfd was absent only in the resumed documentation shell; it did not affect the successful inference artifacts

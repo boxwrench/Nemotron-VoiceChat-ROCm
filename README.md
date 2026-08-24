@@ -14,7 +14,7 @@ microphone -> Nemotron VoiceChat 11B Q8 on AMD -> spoken response
 | --- | --- | --- |
 | AMD Radeon AI PRO R9700 | gfx1201 | VALIDATED -- reference, see [BENCHMARKS.md](docs/BENCHMARKS.md) |
 | AMD Radeon RX 7900 XT | gfx1100 | PENDING |
-| AMD Strix Halo | gfx1151 | PENDING |
+| AMD Strix Halo | gfx1151 | VALIDATED, known perception/CLIP CPU fallback; see [validation notes](research/hardware-validation/gfx1151/README.md) |
 
 R9700 warm speech-to-speech: mean 4.244 s, p95 4.264 s. Full results:
 [research/baselines/R9700-Q8-M1](research/baselines/R9700-Q8-M1/README.md).

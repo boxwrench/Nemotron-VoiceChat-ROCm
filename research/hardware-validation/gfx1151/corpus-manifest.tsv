@@ -1,0 +1,6 @@
+case	file	sha256	duration_seconds	purpose
+VC01	VC01-short.wav	5b2561bdba2086924b0ce27d059c276e025a616366254ae31c2f3af63762e4f0	2.960	short factual
+VC02	VC02-conversation.wav	c1a46c025416a5ac727b789a4dea1a65f7da69f809064f3954ec99c49ce77afa	4.240	conversational
+VC03	VC03-long.wav	b7909f3f2f5cc3f43176a2c653ee95303cc07fa06c551e5316b8ee27aca96f54	22.400	long constrained input
+VC04	VC04-noisy.wav	72dce4765d84d75e5918f4e2c31bdf8d7e29f13634f26275bc1ff04765b38350	2.960	fixed pink-noise mix
+VC05	VC05-pause.wav	f0f111c205cae125dda26f5982e4c54d497a5e1c4d193a10b0ddd9db28ef693f	7.940	2.5 second internal pause

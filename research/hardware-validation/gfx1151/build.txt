@@ -1,0 +1,9 @@
+result=PASS
+command=cmake --build build/hip-gfx1151 --target llama-voicechat -j2
+build_system=CMake 4.3.2
+build_type=Release
+ggml_hip=ON
+gpu_targets=gfx1151
+runtime_source_commit=38a76719e
+target=llama-voicechat
+verification=build reached 100 percent and exited 0

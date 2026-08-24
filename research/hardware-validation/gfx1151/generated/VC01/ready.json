@@ -1,0 +1,7 @@
+{
+  "kind": "ready",
+  "tts": true,
+  "function_head": true,
+  "frame_cap": 2250,
+  "frame_rate": 12.5
+}

@@ -4,3 +4,6 @@ __pycache__/
 build/
 models/
 *.gguf
+/test_vc01.wav
+/test_turn0.wav
+/test_out_s2s.wav

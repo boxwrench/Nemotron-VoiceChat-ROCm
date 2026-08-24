@@ -1,0 +1,3 @@
+case,run,warmup,input,input_seconds,perception_frames,perception_ms,timeline_ms,drain_frames,drain_ms,wav_write_ms,first_text_ms,audio_ready_ms,total_ms,output_seconds,total_s2s_rtf,spoken_tokens,timeline_frame,text,output_sha256,exit_status,tool_calls
+VC04,0,1,VC04-noisy.wav,2.960000,38,46,4306,26,618,1397,3086.354,6367.124,6367.196,3.920000,1.624285,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC04,1,0,VC04-noisy.wav,2.960000,38,27,4383,26,696,1502,3128.494,6608.160,6608.234,3.920000,1.685774,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,

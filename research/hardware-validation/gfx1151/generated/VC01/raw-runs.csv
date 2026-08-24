@@ -1,0 +1,9 @@
+case,run,warmup,input,input_seconds,perception_frames,perception_ms,timeline_ms,drain_frames,drain_ms,wav_write_ms,first_text_ms,audio_ready_ms,total_ms,output_seconds,total_s2s_rtf,spoken_tokens,timeline_frame,text,output_sha256,exit_status,tool_calls
+VC01,0,1,VC01-short.wav,2.960000,38,49,4319,26,630,1387,3051.501,6384.837,6384.920,3.920000,1.628806,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,1,1,VC01-short.wav,2.960000,38,30,4499,26,672,1502,3238.517,6702.581,6702.641,3.920000,1.709857,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,2,1,VC01-short.wav,2.960000,38,26,4347,26,610,1462,3167.009,6444.769,6444.820,3.920000,1.644087,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,3,0,VC01-short.wav,2.960000,38,27,4237,26,614,1471,3023.080,6348.641,6348.696,3.920000,1.619565,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,4,0,VC01-short.wav,2.960000,38,28,4243,26,618,1507,3064.952,6395.914,6395.968,3.920000,1.631625,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,5,0,VC01-short.wav,2.960000,38,28,4201,26,683,1470,3025.081,6381.681,6381.734,3.920000,1.627993,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,6,0,VC01-short.wav,2.960000,38,27,4174,26,620,1479,2999.770,6300.386,6300.434,3.920000,1.607254,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
+VC01,7,0,VC01-short.wav,2.960000,38,29,4157,26,619,1478,2981.135,6283.164,6283.216,3.920000,1.602861,9,56,</s><s>The capital of France is Paris.,38cbf3e63beb777fea39b907c07c9c681d71518dccb3e906d745ab979383e24e,0,
