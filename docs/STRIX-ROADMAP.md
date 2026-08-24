@@ -1,13 +1,20 @@
-# Strix Halo implementation roadmap
+# Strix Halo serving roadmap
 
-The Strix program has two deliberate chapters:
+The product goal is a fluent, continuous, low-latency spoken conversation on
+Strix Halo. The program therefore preserves behavior, not component identity.
 
-1. Make VoiceChat genuinely good on the gfx1151 GPU path.
-2. Turn Strix Halo into a measured heterogeneous GPU/NPU version of the
-   project.
+The Nemotron conversational core and timeline are valuable because they provide
+continuous state, learned turn-taking, overlap, and interruption behavior. But
+perception, TTS, codec, auxiliary ASR, AEC/VAD, and serving infrastructure are
+replaceable when another component produces a better conversational system.
 
-The NPU chapter does not replace the first chapter and does not begin with a
-blind model-layer port.
+The north-star question for every decision is:
+
+> Does this make talking to the system feel faster, more natural, and more
+> interruptible on Strix Halo?
+
+Architectural purity, component loyalty, and NPU utilization are not success
+criteria by themselves.
 
 ## S0 — Frozen reference state — DONE
 
@@ -33,14 +40,31 @@ This result is immutable. Do not retroactively optimize the validation pass.
 Its unsupported ROCm `CONV_2D_DW` / `UNARY` perception operators remain a
 parked performance lead, not an active implementation task.
 
-# Chapter 1 — Fluent GPU VoiceChat
+# Chapter 1 — Fluent conversation and production-shaped perception
 
-## S1 — Import the proven M4 runtime from the PC
+## S1 — Import the production-shaped PC perception runtime
 
-Do not independently implement continuous duplex on Strix. The PC/R9700
-remains the development and reference machine for M4.
+Do not independently reimplement the conversational timeline on Strix. The
+PC/R9700 remains the development and reference machine for the Nemotron runtime
+and its M4 behavior.
 
-When the PC reaches a stable milestone covering:
+The prior-art and serving study starts now. Strix waits only for the PC to
+finish the next perception gate:
+
+```text
+M4-0    DONE
+M4A-1   PROMOTE zero-lookahead
+M4A-2   measure growing-prefix perception cost versus the 80 ms budget
+        then freeze a production-shaped continuous-input perception runtime
+```
+
+Once that exact runtime SHA exists, build it for gfx1151 and measure the same
+perception path on Strix. PC M4B/M4C/M4D may continue in parallel; Strix does
+not wait for the entire PC duplex milestone or for RX 7900 XT validation.
+
+When the full continuous runtime is later frozen, Strix imports that exact
+`llama-voicechat.cpp` SHA rather than independently implementing duplex. The
+identical M4 acceptance suite remains:
 
 ```text
 continuous PCM
@@ -49,9 +73,6 @@ simultaneous input/output
 native turn taking
 interruption
 ```
-
-freeze the exact `llama-voicechat.cpp` SHA. Strix then pulls that exact runtime
-SHA, builds for gfx1151, and runs the identical M4 acceptance suite.
 
 Initial acceptance uses headphones. Do not begin an AEC project as part of
 this step.
@@ -105,45 +126,94 @@ reliability, compute headroom, power/thermal behavior, CPU relief, or another
 explicitly measured objective -- without unacceptable conversation-quality
 regression. It does not have to win every metric.
 
-# Chapter 2 — Heterogeneous GPU/NPU Strix
+# Chapter 2 — Serving topology study and heterogeneous Strix
 
-## S3 — Map XDNA prior art
+## S3A — Map serving prior art now
 
-Begin only after `STRIX-DUPLEX-GPU-M1` exists. This is a source-study phase,
-not implementation.
+This source/prior-art phase starts immediately. It does not require a finished
+PC duplex runtime and it does not authorize an integration. Study the existing
+AMD machinery with a product question: which pieces can help produce a better
+conversation while preserving the Nemotron timeline contract?
 
-Study the existing AMD bodies of work with one question: what machinery can be
-reused instead of building an XDNA backend from scratch?
+| Prior art | What to inspect | Current use in this program |
+| --- | --- | --- |
+| [FastFlowLM](https://github.com/ROCm/FastFlowLM) | XDNA2 execution, Whisper/audio path, Linux NPU runtime, model packaging, streaming APIs, static-shape and state limits | NPU speech/runtime prior art; not proof that Whisper can replace FastConformer embeddings |
+| [Lemonade Server](https://github.com/lemonade-sdk/lemonade) | backend routing, model recipes, OpenAI-compatible APIs, streaming speech, Kokoro/OpenMOSS, FLM, RyzenAI and custom backend boundaries | possible reusable serving infrastructure, isolated renderer/ASR proof path, or upstream destination |
+| [AMD Ryzen AI Software](https://github.com/amd/RyzenAI-SW) / `ryzenai-server` / OGA | ONNX Runtime GenAI, Vitis AI EP, hybrid NPU+iGPU execution, Whisper/Parakeet examples, model packaging | alternate NPU/compiler path; Linux/XDNA2 support and graph coverage must be verified |
+| [REM](https://github.com/boxwrench/REM) | bounded streaming jobs, deterministic state around small models, keep-up rate, prefix stability, NPU placement | workload-shape and state-management prior art |
+| [`xdna-top`](https://github.com/boxwrench/xdna-top) | NPU context attribution, iGPU busy/power, concurrent traces, contention experiments | required evidence that placement happened and what it costs the iGPU/UMA system |
 
-| Prior art | Focus |
-| --- | --- |
-| REM / `xdna-top` | NPU/iGPU concurrency, placement, and contention measurement |
-| FastFlowLM | XDNA2 execution, audio/Whisper implementation, Linux NPU libraries, model packaging, static-shape/runtime constraints |
-| Lemonade | Backend routing and one serving API over heterogeneous engines |
-| `ryzenai-server` / AMD NPU stack | NPU and hybrid execution, ONNX Runtime GenAI, reusable runtime boundaries |
+The study must identify direct reuse, not merely summarize project names. Its
+role-by-role result is in [docs/STRIX-SERVING-OPTIONS.md](STRIX-SERVING-OPTIONS.md).
 
-Deliverable:
+## S3B — Build the serving-options map
+
+Map the functional roles rather than assuming a final component graph:
 
 ```text
-docs/STRIX-XDNA-PRIOR-ART.md
+audio input / perception
+conversational core / turn logic
+speech output / TTS
+codec
+auxiliary ASR
+AEC / VAD / audio preprocessing
+serving / routing
 ```
 
-It should map each VoiceChat component to an existing AMD analogue, possible
-runtime reuse, likely XDNA fit, and unknowns. At minimum cover:
+For every option classify the move as:
 
-| VoiceChat component | Existing AMD analogue | Reusable runtime? | Likely XDNA fit | Unknowns |
-| --- | --- | --- | --- | --- |
-| FastConformer | FLM Whisper encoder | maybe | high interest | model conversion |
-| projector | small tensor graph | TBD | possible | transfer overhead |
-| 9B backbone | FLM LLM | yes conceptually | poor primary target | latency |
-| turn head | small model | TBD | possible | coupling |
-| TTS | unknown | TBD | investigate | state |
-| codec | audio graph | maybe | possible | benefit |
-| AEC/VAD | common NPU workload | likely | good auxiliary fit | later |
+```text
+KEEP       existing VoiceChat component or behavior
+RELOCATE   same component on another Strix engine
+REPLACE    alternate implementation
+```
 
-## S4 — Build the VoiceChat component cost map
+The primary evaluation is fluent conversation: first audible response latency,
+80 ms deadline reliability, interruption responsiveness, audio continuity and
+underruns, conversation quality, CPU load, gfx1151 headroom, XDNA2 activity,
+UMA contention, and package power/thermal behavior.
 
-Before moving anything, measure the existing GPU implementation for:
+## S3C — Define replaceable renderer and serving interfaces
+
+The Nemotron timeline remains the behavioral anchor, but the speech renderer is
+an explicit replaceable boundary. Runtime source reading shows why this does
+not inherently mean replacing the conversational state machine: the sampled
+LLM text token is fed back into the next VoiceChat frame, while TTS consumes
+that token separately.
+
+```text
+Nemotron conversational timeline
+          ├── sampled text token -> next VoiceChat frame
+          │
+          └── push_text(token / delta)
+                        │
+                        ▼
+                 speech renderer
+                        │
+                        ▼
+                 streaming PCM
+```
+
+Candidate renderers include native VoiceChat TTS + codec, Lemonade-supported
+TTS, Kokoro, OpenMOSS, another AMD-friendly streaming TTS, and a future XDNA2
+implementation. The native NVIDIA path is the reference implementation, not a
+requirement.
+
+Native TTS state still participates in the current speech lifecycle: the text
+channel may run far ahead of audible speech, EOS may be held until speech
+settles, quiet/silence state participates in drain completion, and queued text
+represents speech that has not yet been heard. The renderer boundary must expose
+those lifecycle facts without making the timeline depend on
+`voicechat_tts_silence_cos()` or native codec internals.
+
+No renderer or serving integration starts in S3. The isolated proof gate is
+cheap, explicit, and must preserve cancellation, streaming, and timeline state.
+
+## S4 — Profile the production-shaped path and rank roles
+
+After PC M4A-2 produces a frozen production-shaped continuous-input
+perception runtime, measure the same path on gfx1151 before moving anything.
+Then build the full component cost map for:
 
 ```text
 perception
@@ -157,13 +227,18 @@ audio preprocessing
 
 For each component record wall time, critical-path contribution, compute
 utilization, CPU involvement, memory footprint, frequency per 80 ms frame,
-statefulness, tensor shapes, data movement, and existing fallback.
+statefulness, tensor shapes, data movement, existing fallback, and whether a
+replacement can meet the renderer/timeline contract.
 
-This is where `LEAD-GFX1151-0001` becomes relevant. Perception's CPU fallback
-may be a good NPU candidate because it could replace CPU work with a dedicated
-accelerator, but that benefit must be measured rather than assumed.
+`LEAD-GFX1151-0001` remains parked until this profile exists. The perception
+CPU fallback may be a good relocation candidate because it could replace CPU
+work with a dedicated accelerator, but that benefit must be measured rather
+than assumed.
 
-## S5 — Rank candidate NPU placements
+Rank every role as KEEP, RELOCATE, or REPLACE. The candidate must be evaluated
+as a serving configuration, not as an isolated component benchmark.
+
+## S5 — Rank candidate placements and serving configurations
 
 Use this decision gate for every candidate:
 
@@ -179,25 +254,49 @@ frame budget?                candidate
          yes / no
 ```
 
-Score critical-path reduction, XDNA compatibility, conversion effort,
-statefulness difficulty, memory traffic, iGPU contention, CPU work eliminated,
-and expected latency benefit.
+Score critical-path reduction, deadline reliability, conversation quality,
+XDNA compatibility, conversion effort, statefulness difficulty, memory traffic,
+iGPU contention, CPU work eliminated, power/thermal behavior, and expected
+latency benefit.
 
-Initial hypothesis, subject to measurement:
+Initial hypotheses, subject to measurement:
 
 ```text
-Tier 1  FastConformer / perception
-Tier 2  audio auxiliary models, AEC, VAD, small classifiers/control
-Tier 3  projector / codec pieces
-Tier 4  TTS pieces if naturally separable
-Avoid initially  9B conversational backbone
+KEEP       Nemotron conversational core and timeline behavior
+RELOCATE   FastConformer perception if XDNA2 can emit the required embeddings
+REPLACE    TTS if an alternate renderer starts sooner, cancels faster, or
+           preserves quality better
+REPLACE    auxiliary ASR, AEC/VAD, or preprocessing when they improve the
+           system without imposing a turn boundary
+RELOCATE   serving/routing only when lifecycle and streaming contracts survive
+AVOID      moving the 9B conversational backbone merely because it can run
 ```
 
-## S6 — Test XDNA perception feasibility
+The actual winner may be a mixed topology rather than a complete NPU port.
 
-The first serious NPU experiment should determine whether AMD's existing audio
-encoder machinery can host the VoiceChat FastConformer. It is not a blanket
-instruction to port FastConformer to XDNA.
+## S6 — Separate perception feasibility from auxiliary ASR
+
+VoiceChat consumes learned FastConformer perception embeddings directly, not
+simply an ASR transcript. Therefore:
+
+```text
+FastConformer -> XDNA2
+```
+
+is a plausible relocation experiment, while:
+
+```text
+FastConformer -> Whisper transcript
+```
+
+changes the model architecture and requires separate evidence. Whisper through
+FastFlowLM/Lemonade is useful now as XDNA2 audio-encoder prior art, proof of the
+AMD speech runtime/toolchain, and a possible auxiliary ASR/caption/tool channel
+later. It is not a drop-in replacement for perception.
+
+If perception remains attractive after S4, investigate whether AMD's existing
+audio encoder machinery can host the VoiceChat FastConformer. This is not a
+blanket instruction to port it.
 
 Investigate in order:
 
@@ -210,45 +309,52 @@ Investigate in order:
 7. Can bounded-lookahead streaming be represented?
 8. What are model-load and invocation overheads?
 
-Only convert or implement after these answers are favorable.
+Only convert or implement after these answers are favorable and the candidate
+beats the control on an explicit serving objective.
 
-## S7 — Build one bounded heterogeneous prototype
+## S7 — Build one bounded heterogeneous serving prototype
 
-The first target architecture is:
+The first target is not a fixed component diagram. It is one bounded topology
+chosen from the serving-options map, for example:
 
 ```text
                  STRIX HALO
 
-MIC -> XDNA2 NPU: FastConformer perception
-                  │
-                  ▼ shared UMA
-              gfx1151: Nemotron-H + turn logic
-                  │
-                  ▼
-              gfx1151: TTS / codec -> SPEAKER
+MIC -> selected perception / preprocessing path
+       │
+       ▼
+   Nemotron conversational timeline on the selected core
+       │ incremental text / speech intent
+       ▼
+   selected speech renderer -> streaming PCM -> SPEAKER
 ```
 
-Keep one continuous VoiceChat timeline. Do not turn the system into separate
-NPU-ASR -> GPU-LLM -> GPU-TTS services; the NPU is a backend for a VoiceChat
-component, not a replacement architecture.
+Keep one continuous VoiceChat timeline. Do not turn the system into a
+conventional VAD -> ASR -> LLM -> TTS assistant unless evidence shows that it
+actually produces the better conversational system. Any NPU is a backend for a
+role in VoiceChat, not a reason to discard the learned timeline.
 
-## S8 — Prove the placement matters
+## S8 — Prove the serving topology matters
 
-Run the same conversational workload in three configurations:
+Once full duplex is stable, record `STRIX-DUPLEX-GPU-M1` and run the same
+conversational workload in at least three configurations:
 
 ```text
-A — current GPU/CPU reference
-B — XDNA perception
-C — CPU perception control
+A — native VoiceChat control
+B — best bounded KEEP/RELOCATE/REPLACE candidate
+C — matched control for the moved role
 ```
 
-Compare 80 ms deadline misses, timeline lag, first audible speech, barge-in
-response, gfx1151 utilization, CPU utilization, NPU utilization, package
-power, UMA pressure, and conversation quality. Use `xdna-top` to prove that
-the NPU actually executed the workload.
+Compare first audible response latency, 80 ms deadline misses, timeline lag,
+interruption responsiveness, audio underruns, conversation quality, CPU load,
+gfx1151 utilization/headroom, XDNA2 activity, package power/thermal behavior,
+and UMA contention. Use `xdna-top` to prove that NPU placement happened and to
+observe concurrent iGPU effects.
 
-The question is whether moving perception onto XDNA2 improves fluent
-conversation, not whether the NPU produces an attractive standalone benchmark.
+The question is whether the serving topology makes conversation faster, more
+natural, or more interruptible. Equal latency with fewer deadline spikes,
+lower CPU load, more GPU headroom, or better power/thermal behavior can be a
+material win. NPU utilization alone is not a win.
 
 ## S9 — Decide what belongs upstream
 
@@ -305,16 +411,35 @@ Never float Strix against a runtime branch. Pin exact known-good commits.
 
 ## Current instruction
 
-The gfx1151 Q8 validation milestone is frozen. Do not begin NPU
-implementation. The next primary milestone is importing the exact stable M4
-runtime produced on the R9700 development machine, validating it on Strix, and
-establishing `STRIX-DUPLEX-GPU-M1`.
+Start now:
 
-Do not optimize the current CPU perception fallback before S4. Do not place the
-9B conversational backbone on the NPU merely because it can run models. Do
-not create a separate ASR -> LLM -> TTS pipeline. Preserve VoiceChat's unified
-continuous conversational timeline.
+```text
+S3A  Lemonade / FastFlowLM / AMD Ryzen AI / REM prior-art study
+S3B  Strix serving-component and KEEP/RELOCATE/REPLACE map
+S3C  replaceable renderer and serving-interface definition
+```
 
-Success is not “NPU utilized.” Success is a materially better fluent VoiceChat
-serving configuration on Strix Halo, with measured evidence showing why the
-NPU belongs where it is placed.
+Wait only for the PC to finish M4A-2 and freeze the production-shaped
+continuous-input perception runtime. Then build it on gfx1151, measure the
+same perception path, and rank the candidates before any full integration.
+
+Meanwhile PC M4B -> M4C -> M4D may continue independently.
+
+Rules:
+
+- Do not optimize merely to increase NPU utilization.
+- Do not investigate `LEAD-GFX1151-0001` or optimize the current CPU fallback
+  before the production-shaped profile makes it relevant.
+- Do not commit to FastConformer-on-NPU before profiling.
+- Do not commit to NVIDIA TTS if a better renderer exists.
+- Do not begin a full NPU or replacement-TTS integration during S3.
+- Do not break Nemotron into a conventional VAD -> ASR -> LLM -> TTS assistant
+  unless evidence shows that it produces the better conversation.
+- Do not make Lemonade a mandatory dependency prematurely. Treat it as
+  reusable infrastructure, implementation prior art, and a possible upstream
+  destination.
+- If a generic missing capability appears, evaluate contributing it to
+  Lemonade/FastFlowLM before building a permanent VoiceChat-only version.
+
+Success is a materially better fluent VoiceChat serving configuration on Strix
+Halo, with measured evidence showing why each role belongs where it is placed.

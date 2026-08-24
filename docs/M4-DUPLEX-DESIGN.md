@@ -469,15 +469,21 @@ productization (AEC), not solve while still validating the core premise.
 
 ## Strix Halo roadmap handoff
 
-Strix work is deliberately split into two chapters: first import the proven
-M4 runtime and make VoiceChat fluent on gfx1151; only then study a measured
-heterogeneous gfx1151 + XDNA2 architecture. The full S0-S9 implementation
-roadmap, prior-art study, placement gates, and upstream decision are in
-[docs/STRIX-ROADMAP.md](STRIX-ROADMAP.md).
+The Strix product goal is a fluent, continuous, low-latency spoken
+conversation. Preserve behavior, not component identity: Nemotron's
+conversation core and timeline remain the behavioral anchor, while perception,
+TTS, codec, auxiliary ASR, AEC/VAD, and serving infrastructure may be kept,
+relocated, or replaced when evidence says the conversation improves.
 
-The NPU chapter is not an M4 implementation task. M4 must establish the
-continuous-duplex workload and its critical-path measurements before any NPU
-implementation or optimization begins.
+The prior-art and serving-options study starts now, before the full PC M4
+implementation. See [docs/STRIX-ROADMAP.md](STRIX-ROADMAP.md) and
+[docs/STRIX-SERVING-OPTIONS.md](STRIX-SERVING-OPTIONS.md).
+
+Strix waits for the PC only at the production-shaped perception gate: M4A-2
+must measure the promoted zero-lookahead/growing-prefix perception path against
+the 80 ms budget and freeze its exact runtime SHA. PC M4B/M4C/M4D may continue
+in parallel. No XDNA implementation, replacement-TTS integration, or current
+fallback optimization begins merely because the source study is underway.
 
 ## Explicitly out of scope for this document
 
