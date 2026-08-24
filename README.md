@@ -66,15 +66,19 @@ license.
 
 | Milestone | Scope |
 | --- | --- |
-| M1 | R9700 Q8 reproducible baseline (in progress) |
-| M2 | gfx1100 + gfx1151 validation |
-| M3 | persistent push-to-talk |
-| M4 | multi-turn conversational state |
-| M5 | user-visible latency instrumentation |
-| M6 | true live duplex / barge-in |
+| M1 | R9700 Q8 reproducible baseline -- DONE |
+| M2 | gfx1100 + gfx1151 validation -- in progress |
+| M3 | push-to-talk client -- DONE, now a diagnostic/fallback interface, not extended further |
+| M4 | native continuous duplex: always listening, incremental speech out, interruptible -- design in progress, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
 | M7 | optimize bottlenecks from the actual interactive workload |
 | M8 | optional multi-GPU experiments |
 | M9 | public AMD VoiceChat release |
+
+M4 absorbs what earlier planning called M4 (multi-turn state, already
+proven by M3), M5 (latency instrumentation), and M6 (duplex/barge-in) into
+one milestone, since PTT already established multi-turn conversational
+state and the real goal was always the duplex/barge-in behavior, not an
+intermediate step on the way there.
 
 ## Documentation
 
