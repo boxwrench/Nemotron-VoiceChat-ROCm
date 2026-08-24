@@ -1,14 +1,22 @@
 # Install
 
-Deterministic setup flow, orchestrated by `scripts/setup.sh`:
+Fresh-clone setup flow, orchestrated by `scripts/setup.sh`:
 
 ```
-1. scripts/build-rocm.sh    clone boxwrench/llama-voicechat.cpp at the pinned
+git clone https://github.com/boxwrench/Nemotron-VoiceChat-ROCm.git
+cd Nemotron-VoiceChat-ROCm
+scripts/setup.sh
+```
+
+which runs, in order:
+
+```
+1. scripts/download-q8.sh   fetch the source GGUF and tokenizer metadata from
+                             Hugging Face; see docs/MODELS.md for provenance
+
+2. scripts/build-rocm.sh    clone boxwrench/llama-voicechat.cpp at the pinned
                              commit (see runtime/README.md) and build it with
                              HIP for the target GPU (GPU_TARGETS=gfx1201, ...)
-
-2. scripts/download-q8.sh   fetch the source GGUF and tokenizer metadata from
-                             Hugging Face; see docs/MODELS.md for provenance
 
 3. scripts/convert-q8.sh    run the runtime repo's four Q8 conversion steps
                              (tools/voicechat/convert_voicechat_*.py) and
@@ -22,7 +30,9 @@ Deterministic setup flow, orchestrated by `scripts/setup.sh`:
 ```
 
 Each step is idempotent and can be re-run independently once its
-prerequisites exist on disk.
+prerequisites exist on disk. `build-rocm.sh` and `convert-q8.sh` always
+check out the exact pinned commit recorded in `runtime/README.md` -- never
+the tip of the runtime fork's `amd/rocm` integration branch.
 
 This mirrors the exact protocol already recorded, by hand, in
 `research/baselines/R9700-Q8-M1/commands.txt` and

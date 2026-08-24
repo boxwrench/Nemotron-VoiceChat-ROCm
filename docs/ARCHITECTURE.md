@@ -7,9 +7,13 @@ ggml-org/llama.cpp
         ^
 sansamour/llama-voicechat.cpp
         ^
-boxwrench/llama-voicechat.cpp        runtime fork: Q8 converters, HIP/backend
-        |                            fixes, changes appropriate to upstream
-        | pinned / consumed by
+boxwrench/llama-voicechat.cpp (voicechat)   fork default branch, upstream lineage
+        ^
+        amd/q8-bringup                       frozen: first working AMD Q8 bring-up
+        ^
+        amd/rocm                             ongoing AMD runtime integration branch
+        |
+        | explicitly validated commit pinned / consumed by
         v
 boxwrench/Nemotron-VoiceChat-ROCm    this repo: install, reproduce, benchmark,
                                       use; AMD-facing UX and research
@@ -17,8 +21,10 @@ boxwrench/Nemotron-VoiceChat-ROCm    this repo: install, reproduce, benchmark,
 
 This repository does not vendor the llama.cpp source tree and is not where
 low-level runtime, HIP/backend, or Q8-converter changes happen. Those belong
-in `boxwrench/llama-voicechat.cpp`, pinned here by commit (see
-`runtime/README.md`).
+in `boxwrench/llama-voicechat.cpp`. `amd/rocm` is where candidate AMD
+runtime changes accumulate; this repository always consumes an explicitly
+validated commit pinned in `runtime/README.md`, never the floating branch
+tip.
 
 ## Client/server split (push-to-talk, M3+)
 

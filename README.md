@@ -12,9 +12,9 @@ microphone -> Nemotron VoiceChat 11B Q8 on AMD -> spoken response
 
 | GPU | gfx target | Status |
 | --- | --- | --- |
-| AMD Radeon AI PRO R9700 | gfx1201 | PROVEN, see [BENCHMARKS.md](docs/BENCHMARKS.md) |
-| AMD Radeon RX 7900 XT | gfx1100 | not yet validated |
-| AMD Strix Halo | gfx1151 | not yet validated |
+| AMD Radeon AI PRO R9700 | gfx1201 | VALIDATED -- reference, see [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| AMD Radeon RX 7900 XT | gfx1100 | PENDING |
+| AMD Strix Halo | gfx1151 | PENDING |
 
 R9700 warm speech-to-speech: mean 4.244 s, p95 4.264 s. Full results:
 [research/baselines/R9700-Q8-M1](research/baselines/R9700-Q8-M1/README.md).
@@ -42,12 +42,16 @@ including the planned push-to-talk client/server split.
 ## Quickstart
 
 ```
+git clone https://github.com/boxwrench/Nemotron-VoiceChat-ROCm.git
+cd Nemotron-VoiceChat-ROCm
 scripts/setup.sh
 ```
 
-runs, in order: `build-rocm.sh` -> `download-q8.sh` -> `convert-q8.sh` ->
-`smoke-test.sh`. See [docs/INSTALL.md](docs/INSTALL.md) for the full,
-deterministic flow and what each step verifies.
+`setup.sh` runs, in order: `download-q8.sh` (source GGUF + tokenizer
+metadata) -> `build-rocm.sh` (pinned runtime, HIP build) -> `convert-q8.sh`
+(split/verify Q8 artifacts) -> `smoke-test.sh` (BUILD/LOAD/STT/TTS/S2S).
+See [docs/INSTALL.md](docs/INSTALL.md) for the full, deterministic flow and
+what each step verifies.
 
 ## Model weights
 

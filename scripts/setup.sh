@@ -3,8 +3,8 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-./build-rocm.sh "$@"
 ./download-q8.sh "$@"
+./build-rocm.sh "$@"
 ./convert-q8.sh "$@"
 ./smoke-test.sh "$@"
 
