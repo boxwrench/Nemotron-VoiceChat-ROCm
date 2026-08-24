@@ -4,7 +4,7 @@
 | --- | --- | --- | --- |
 | AMD Radeon AI PRO R9700 | gfx1201 | VALIDATED -- reference | `research/baselines/R9700-Q8-M1/` |
 | AMD Radeon RX 7900 XT | gfx1100 | PENDING | `research/hardware-validation/gfx1100/` |
-| AMD Strix Halo | gfx1151 | PENDING | `research/hardware-validation/gfx1151/` |
+| AMD Strix Halo | gfx1151 | VALIDATED -- known perception/CLIP CPU fallback | `research/hardware-validation/gfx1151/` |
 
 ## Reference environment (R9700)
 

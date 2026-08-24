@@ -67,9 +67,10 @@ license.
 | Milestone | Scope |
 | --- | --- |
 | M1 | R9700 Q8 reproducible baseline -- DONE |
-| M2 | gfx1100 + gfx1151 validation -- in progress |
+| M2 | gfx1100 validation -- in progress; gfx1151 -- DONE, see [validation notes](research/hardware-validation/gfx1151/README.md) |
 | M3 | push-to-talk client -- DONE, now a diagnostic/fallback interface, not extended further |
 | M4 | native continuous duplex: always listening, incremental speech out, interruptible -- design in progress, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
+| F1 | Strix Halo program: Chapter 1 fluent gfx1151 GPU VoiceChat, then Chapter 2 heterogeneous XDNA2/NPU architecture -- PARKED at S0, see [docs/STRIX-ROADMAP.md](docs/STRIX-ROADMAP.md) |
 | M7 | optimize bottlenecks from the actual interactive workload |
 | M8 | optional multi-GPU experiments |
 | M9 | public AMD VoiceChat release |
@@ -88,3 +89,4 @@ intermediate step on the way there.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/BENCHMARKS.md](docs/BENCHMARKS.md)
 - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- [docs/STRIX-ROADMAP.md](docs/STRIX-ROADMAP.md)

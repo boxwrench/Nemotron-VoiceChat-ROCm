@@ -36,5 +36,7 @@ the pinned runtime commit, and compares output against
 
 ## Other hardware
 
-No benchmark results yet for gfx1100 or gfx1151. See
-[docs/HARDWARE.md](HARDWARE.md) for the M2 validation plan.
+No benchmark results yet for gfx1100. The gfx1151 validation package, including
+raw runs, summaries, logs, and telemetry, is under
+`research/hardware-validation/gfx1151/`; its cross-GPU latency comparison is
+preliminary/non-matched.

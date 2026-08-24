@@ -467,6 +467,18 @@ productization (AEC), not solve while still validating the core premise.
   have it react correctly, without a push-to-talk button, without an
   artificial "you may speak now," and without resetting the conversation.
 
+## Strix Halo roadmap handoff
+
+Strix work is deliberately split into two chapters: first import the proven
+M4 runtime and make VoiceChat fluent on gfx1151; only then study a measured
+heterogeneous gfx1151 + XDNA2 architecture. The full S0-S9 implementation
+roadmap, prior-art study, placement gates, and upstream decision are in
+[docs/STRIX-ROADMAP.md](STRIX-ROADMAP.md).
+
+The NPU chapter is not an M4 implementation task. M4 must establish the
+continuous-duplex workload and its critical-path measurements before any NPU
+implementation or optimization begins.
+
 ## Explicitly out of scope for this document
 
 - No runtime or client code changes.
