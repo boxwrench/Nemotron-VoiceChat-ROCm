@@ -4,6 +4,19 @@ Status: design only. No runtime or client code has changed as a result of
 this document. It exists to scope M4 before any implementation branch is
 opened.
 
+Reviewed once; accepted directionally with three corrections applied
+below (assistant-overlap vs. user-interruption are distinct phenomena,
+a live-timeline causality invariant, and playback cancellation separated
+from internal TTS/model-state cancellation). The M4-0 feasibility spike
+(see bottom) has since run, from source reading alone, no experiment
+needed: M4-0B (chunked audio decode) is RESOLVED -- not a blocker.
+M4-0A (streaming perception encode) is BLOCKER CHARACTERIZED -- exact
+online-equivalent embeddings are not achievable at all given this
+encoder's bidirectional attention, so the open work is choosing among a
+characterized set of tradeoffs (fixed lookahead / bounded sliding
+context / causal encoder change / replay), not closing a gap with more
+compute. Details below.
+
 ## Why this milestone, and why now
 
 M3 (push-to-talk) proved the plumbing: process lifecycle, the `--serve`
@@ -92,15 +105,45 @@ a second in" (`tools/voicechat/README.md:453-465`). PTT sets both
 unconditionally because whole-utterance record-then-submit needs strict
 turn boundaries; M4 needs the opposite.
 
-### 6. No barge-in signal is surfaced anywhere
+### 6. No barge-in signal is surfaced anywhere -- and the signal that does
+exist is the wrong direction for the demo we actually want
 
 Point 5 is proof the model already wants to interrupt on its own -- but
-nothing in the current code turns "the model sampled `bos` while
-`in_audio` was true" into an event a caller can react to. It's silently
-rewritten to `pad` and dropped. There is a separate sotc/eotc/eotr
+that signal (`bos` sampled while `in_audio` is true) is the *assistant*
+electing to speak while the *user's* audio is still arriving:
+
+```
+USER is speaking
+       |
+model emits bos
+       |
+ASSISTANT wants to start speaking
+```
+
+That's **assistant overlap**, not what M4D's demo needs. The scenario we
+actually care about is the reverse -- the user interrupting the
+assistant:
+
+```
+ASSISTANT is speaking
+       |
+USER begins speaking
+       |
+model receives that audio
+       |
+what does the model do?
+```
+
+Nothing in the codebase today answers that question. There is no known
+token/state transition for "new user speech arrives while the assistant
+is mid-response" -- it could close the text channel, go pad-heavy, emit
+a fresh bos/eos pair, change TTS behavior, or something not yet
+anticipated. **Do not assume the bos-while-in_audio signal (assistant
+overlap) is also the signal for user interruption** -- they are two
+named, distinct phenomena, and the second one's behavior is unknown
+until observed (see M4-0 below). There is a separate sotc/eotc/eotr
 function-head channel, but it is scoped to tool-calls, not
-user/assistant speech overlap; it is not a source for M4's interruption
-signal.
+user/assistant speech overlap; it is not a source for either signal.
 
 ### 7. `vc_serve()` is strictly one-shot request/response
 
@@ -129,13 +172,90 @@ no VAD deciding where a "turn" begins or ends -- turn-taking stays a
 property of the model's own output (point 5/6), not an externally
 imposed boundary.
 
-**Open question, not resolved by this document:** whether the
-FastConformer encoder as wired through mtmd supports chunked/streaming
-encoding at all, or whether it fundamentally needs a fixed-size window of
-context to produce a comparable embedding to the whole-clip path today.
-This needs a dedicated read of mtmd's encoder implementation before an
-implementation branch can commit to an approach. Flagging it here rather
-than guessing.
+**Resolved by M4-0A (real blocker, confirmed architecturally):** naive
+80ms-chunked encoding does **not** reproduce whole-clip embeddings. The
+FastConformer/parakeet encoder graph (`clip_graph_parakeet::build()`,
+`tools/mtmd/models/parakeet.cpp:7-421`) has no cross-call state --
+`mtmd_encode_chunk_impl()` (`tools/mtmd/mtmd.cpp:1738-1781`) runs
+`clip_image_batch_encode()` fresh every call, and `mtmd_audio_cache`
+(`mtmd-audio.h:28-51`) only holds fixed constants (mel filterbank,
+window), not sequence state. Its default path is full bidirectional
+self-attention over the entire submitted chunk (`parakeet.cpp:264-336`,
+active whenever `n_time <= 8192` frames -- i.e. always, at conversational
+scale), so a frame's embedding is a function of the whole clip it was
+encoded with. The "local attention" fallback only kicks in past ~10.9
+minutes and even then uses a **symmetric** window (`att_left =
+att_right = 128`, `:74-75`) -- it needs ~10s of *future* audio, not just
+causal history. It is not a causal/streaming encoder in any mode
+relevant to a live conversation.
+
+This is a genuine M4A blocker, not a formality: every embedding measured
+to date (including the R9700 baseline) was produced with cross-frame
+context that 80ms-chunked encoding would discard.
+
+**Clarification on top of the M4-0A finding:** because this encoder path
+is bidirectional, exact offline-equivalent embeddings are not available
+at the instant a frame arrives at all -- an embedding for frame N can
+change once audio after frame N becomes available, since the encoder
+attends over the whole submitted clip. A growing/sliding re-encode
+*alone* does not solve this: it changes how much context is used, not
+the fact that the "true" (whole-clip) embedding for any frame is
+unknowable until the clip is known to have ended. M4A is therefore a
+latency/context/equivalence problem, not just a compute-cost problem --
+re-encoding more context on every frame does not remove the tradeoff, it
+only lets you choose where on it you sit.
+
+A live implementation must choose among:
+
+- **Fixed lookahead**: delay emission of frame N's embedding until some
+  fixed amount of future audio (e.g. N+k frames) has arrived, trading
+  latency for closer-to-exact embeddings.
+- **Bounded sliding context**: approximate the whole-clip encoder with a
+  finite left/right context window re-encoded per frame -- cheaper than
+  fixed lookahead in latency terms, but an *approximation* of the
+  offline embedding, not a reproduction of it; how close the
+  approximation needs to be is unmeasured.
+- **A genuinely causal/chunked encoder modification**: change the
+  encoder itself (causal conv, little/no lookahead attention) so a
+  streaming embedding is not an approximation at all -- the most
+  invasive option, not attempted by this design.
+- **Downstream replay/revision**: let early embeddings be provisional and
+  revise/replay generation as more audio arrives -- likely too expensive
+  and architecturally complex for the primary M4 path; noted as a
+  fallback of last resort, not a direction to pursue first.
+
+None of these four is selected by this document. Choosing between them
+needs its own follow-up (measuring how much fixed lookahead or how wide
+a bounded context is actually required before embeddings are close
+enough to whole-clip to preserve VoiceChat's output quality) before an
+implementation branch commits to one.
+
+### The live-timeline causality invariant
+
+Today the frame loop can run as fast as the GPU allows because the
+entire user clip is already known in advance (point 2: "not paced to a
+clock"). Once the microphone is live, that stops being safe. If the GPU
+can compute five frames ahead of what the user has actually said so far,
+those frames implicitly assume future silence that hasn't happened yet:
+
+```
+wall clock:       0ms     80     160     240     320
+mic available:     A       B       C
+model timeline:    A B C D E F G       <- WRONG, D-G assume unheard silence
+```
+
+If the user speaks during that window, the model has already generated
+past the point where that speech should have entered its state. So:
+
+> The VoiceChat timeline must never advance beyond the latest microphone
+> frame actually captured, except for explicitly defined inserted states
+> such as tool-call frames.
+
+This makes 80ms/frame a hard causal budget, not just a throughput number:
+below it, the runtime keeps pace with real time; above it, conversational
+lag accumulates and compounds. The scoreboard at the bottom of this
+document is revised accordingly -- frame service time and deadline misses
+matter more here than tokens/sec.
 
 ### Persistent VoiceChat state
 
@@ -152,13 +272,30 @@ something that isn't broken.
 
 ### Incremental audio events
 
-Extend `voicechat_tts_step()`'s existing per-frame RVQ code output with
-an incremental decode-to-PCM path -- chunked ConvNeXt/ISTFT decode per
-frame or per small group of frames, replacing the single end-of-turn
-`voicechat_tts_write_wav()` call. Whether the ConvNeXt/ISTFT stage can
-decode a partial code sequence without artifacts at chunk boundaries is
-the open question here, parallel to the mtmd question above -- also not
-resolved by this document.
+**Resolved by M4-0B (not a blocker -- the codec is already causal and
+already chunks internally):** `codec_decode()`
+(`voicechat-tts.cpp:1237-1309`) already decodes in 8-frame chunks with an
+8-frame causal left-context overlap (`const int chunk = 8, overlap = 8;`,
+`:1245`) that gets discarded before use (`ggml_concat(ctx, zpad, x, 1)`
+-- an explicit causal left-pad, no right/future context anywhere in the
+ConvNeXt block, `:1272-1273`). `voicechat_tts_write_wav()` already
+exploits exactly this for mid-stream starts: a `lead = min(first, 8)`
+frame run-up gets decoded and thrown away (`:1326`, comment in the code
+itself: "the codec is causal, so a range that starts mid-stream is
+decoded with a few frames of run-up that are dropped again; that is the
+same trick codec_decode uses for its own chunking").
+
+The one piece not yet chunked is the ISTFT/overlap-add stage, currently
+one batch pass over the full spectrogram (`:1363-1401`) -- but a
+ready-built streaming replacement already exists, unused:
+`mtmd_audio_streaming_istft` (`tools/mtmd/mtmd-audio.h:161-191`, impl
+`mtmd-audio.cpp:1324-1429`), with exactly the `process_frame()`/
+`flush()`/`reset()` shape this needs. Incremental audio output is
+therefore an **integration task** -- decode `codec_decode`'s existing
+8-frame chunks incrementally and route them through
+`mtmd_audio_streaming_istft` instead of one batch ISTFT call -- not an
+open architectural risk. The original framing of this as an "open
+question" parallel to the encoder side was too cautious.
 
 ### Simultaneous input and output
 
@@ -171,14 +308,33 @@ output-side ring buffers are new.
 
 ### Interruption events
 
-Turn `VC_NO_BARGE`'s currently-silent bos-while-`in_audio` rewrite
-(point 5) into a surfaced `barge_in` event instead of swallowing it --
-this is the direct token-level hook already found in the code, not new
-detection logic. Document what state resets and what carries over when a
-barge-in is acted on: the in-progress assistant response's TTS queue and
-any not-yet-decoded audio should stop/drain, while the underlying
-timeline/KV-cache state stays live and continuous (per point 2, this is
-one continuous session, not a reset between "turns").
+Two named, separately-handled phenomena (point 6) -- do not conflate
+them:
+
+- **Assistant overlap**: turn `VC_NO_BARGE`'s currently-silent
+  bos-while-`in_audio` rewrite into a surfaced event instead of
+  swallowing it. This is the direct token-level hook already found in
+  the code, not new detection logic.
+- **User interruption**: no known signal exists for this yet. What the
+  model does when new user speech arrives while the assistant is
+  mid-response is unobserved -- M4-0 (below) is where this gets watched
+  for the first time, not designed from assumption.
+
+And within user interruption, two separate actions that must not be
+conflated:
+
+- **A. Playback cancellation** (UX decision, safe to do immediately): stop
+  playing assistant PCM the human has not yet heard, the instant an
+  interruption is recognized.
+- **B. Model/TTS internal-state cancellation** (needs evidence, not yet
+  decided): whether the underlying TTS/timeline state should reset at
+  all. The runtime intentionally runs the text channel ahead of the
+  spoken channel, with TTS state tracking that gap -- earlier runtime
+  work found that arbitrarily disturbing that timing degrades speech
+  quality. **Do not assume that muting audible output implies clearing
+  internal TTS/model state** -- those are two different systems (what
+  the user hears vs. what the model's timeline is doing), and only A is
+  a safe default today.
 
 ### Bounded buffers and backpressure
 
@@ -207,12 +363,58 @@ established branch/pin policy in `runtime/README.md`. Client-side changes
 (continuous mic capture ring buffer, continuous playback) belong in this
 repo, under `app/`, once the runtime side has something to talk to.
 
+## M4-0: feasibility and causality spike -- DONE
+
+Both questions resolved from source reading alone; no file-driven
+experiment was needed for either (the code itself was decisive). No live
+audio, no threading, no ring buffers, no protocol/client changes were
+touched, per scope.
+
+### M4-0A feasibility: BLOCKER CHARACTERIZED
+
+See "Continuous PCM input" above for the full finding: the
+parakeet/FastConformer encoder graph has no cross-call state and uses
+full bidirectional self-attention over whatever's submitted. Exact
+online equivalence to the whole-clip embeddings every prior measurement
+(including the R9700 baseline) was produced with is **not achievable at
+all** without future context or downstream replay -- this isn't a matter
+of picking a big-enough re-encode window and calling it solved. What
+M4-0A produced is a characterization of the tradeoff (fixed lookahead vs.
+bounded sliding context vs. causal encoder modification vs.
+replay/revision), not a resolution of it. Selecting a strategy is
+follow-up work, not decided by this document.
+
+### M4-0B feasibility: RESOLVED
+
+See "Incremental audio events" above: `codec_decode()` already chunks
+internally in causal 8-frame windows with discarded run-up context, the
+same trick `voicechat_tts_write_wav()` already uses for mid-stream
+starts. Only the ISTFT stage needs wiring up, and a ready-built streaming
+implementation (`mtmd_audio_streaming_istft`) already exists unused in
+the codebase. M4B is an integration task, not an open feasibility
+question.
+
+### Constraint carried forward into M4A
+
+Headphones are a requirement, not a recommendation, for the first live-
+microphone test in M4A. Playing VoiceChat through speakers while feeding
+the mic back in introduces acoustic echo -- a separate problem from
+whether the native duplex model works at all, and one to defer to later
+productization (AEC), not solve while still validating the core premise.
+
 ## Sequencing (bounded steps, not started by this document)
 
-- **M4A -- continuous input.** Prove VoiceChat can be fed microphone audio
+- **M4A -- continuous input.** Now scoped by M4-0A's finding as a
+  latency/context/equivalence problem, not just a wiring problem: select
+  and validate one of fixed lookahead, bounded sliding context, or a
+  causal encoder modification (M4-0A's characterized tradeoff, above) --
+  exact whole-clip-equivalent embeddings are not achievable online at
+  all, so the choice is about how close an approximation is acceptable
+  and at what latency cost, not about picking a re-encode window size and
+  calling it solved. Only once that's chosen does feeding VoiceChat
   continuously at its native cadence with no artificial turn boundary
-  imposed from outside. Headphones recommended for the first test so
-  speaker echo doesn't confound the result.
+  become meaningful to build. Headphones required for the first live
+  test.
 - **M4B -- incremental output.** Replace "wait for a complete WAV" with
   streaming playback as TTS frames decode. The metric that matters
   changes from complete speech-to-speech time (the R9700 baseline's 4.244s
@@ -229,9 +431,11 @@ repo, under `app/`, once the runtime side has something to talk to.
 - No runtime or client code changes.
 - No merge decision on `feature/push-to-talk` -- left pushed and
   unmerged, unaffected by this document.
-- No resolution of the two open feasibility questions (streaming
-  FastConformer encode, chunked ConvNeXt/ISTFT decode) -- flagged as
-  follow-up reads, not answered here.
+- No implementation of M4-0A's sliding-window re-encode strategy or
+  M4-0B's ISTFT streaming integration -- both are now scoped, neither is
+  built.
+- No live-microphone testing was part of M4-0 -- both findings came from
+  source reading, no experiment was even needed.
 - No benchmarking, no kernel/graph tuning.
 
 ## Revised scoreboard
@@ -242,16 +446,25 @@ target once M4 begins. The metrics that matter for a continuous duplex
 system:
 
 ```
-continuous frame budget           < 80 ms
+mean frame service time
+p95/p99 frame service time
+deadline misses (frame service time > 80 ms)
+input backlog depth
+output underruns
+timeline lag vs. wall clock
 user stops speaking -> first assistant text
 user stops speaking -> first audible assistant speech
-interruption -> assistant stops
+interruption -> assistant stops (playback cancellation)
 interruption -> new response begins
-audio underruns
 missed interruptions
 false interruptions
 conversation continuity across interruptions
 ```
+
+The causality invariant above makes the first six of these the real
+scoreboard: whether the R9700 can execute each 80ms slice before the
+next slice of reality arrives is the actual question M4 answers,
+underneath all of the above.
 
 And, ultimately, the qualitative question none of the above fully
 capture on their own: does it feel like talking to something.
