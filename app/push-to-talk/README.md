@@ -25,6 +25,14 @@ Audio in/out uses the system's normal ALSA command-line tools
 (`arecord`/`aplay`), not an audio framework. The one extra Python
 dependency is `pynput`, used only for global hold/release key detection.
 
+Two entry points, same `Session`/protocol/audio code underneath, different
+input trigger:
+
+- `ptt.py` -- hold/release SPACE (`pynput`). Needs X11/XWayland or
+  `input`-group access on Wayland; see the Wayland section below.
+- `ptt_terminal.py` -- Enter to start, Enter to stop, no global key capture
+  needed. Use this on a plain Wayland session.
+
 ## Setup
 
 ```
@@ -65,30 +73,52 @@ live mic/keyboard, exercising the same session/protocol/playback path.
 Useful where holding a physical key or a live mic isn't available (e.g.
 over SSH); it is not a substitute for a real hold-and-speak test.
 
-## Verified (R9700 / gfx1201, this session)
+## Wayland: `pynput` Space-hold does not work without `input` group access
 
-`--test` ran two turns end to end against the real build and Q8 model:
-runtime started once, `ready` received, turn 1 (VC01, short factual) and
-turn 2 (VC02, conversational) both completed with streamed text and a
-written WAV, the process stayed resident across both turns (no reload),
-and it shut down cleanly afterward. `arecord`/`aplay` and the SIGINT-based
-stop-recording path were checked independently against the real capture
-device.
+On a strict Wayland session, `pynput`'s global key listener cannot
+intercept Space at all -- held Space just types spaces into the terminal
+instead of firing `on_press`/`on_release`. This needs either an X11/XWayland
+session, or the user added to the `input` group so the `evdev` backend can
+read `/dev/input/event*` (verify with `groups`; log out/in after adding).
 
-Not verified in this session: an actual hold/release SPACE test with a
-physical keyboard and live microphone end to end (no interactive terminal
-in this environment) -- do that locally before relying on this for real
-use.
+Until then, use the terminal fallback client, which needs no global key
+capture at all:
+
+```
+app/push-to-talk/.venv/bin/python app/push-to-talk/ptt_terminal.py
+```
+
+Press Enter to start recording, Enter again to stop and submit, `q` to
+quit. It reuses the same `Session`/`record_to`/`submit_turn` as `ptt.py`
+(only the input trigger differs), so it's the same protocol and audio
+path, not a separate implementation. A 0.8s minimum-recording guard, a
+stdin-flush between turns, and a post-turn cooldown avoid the two bugs an
+Enter-based trigger is otherwise prone to: the stop keypress being read as
+the next turn's start keypress, and submitting before `arecord` has
+actually opened the capture device.
+
+## Verified (R9700 / gfx1201)
+
+- `ptt.py --test`: two turns end to end against the real build and Q8
+  model -- runtime started once, `ready` received, both turns completed
+  with streamed text and a written WAV, process stayed resident (no
+  reload), shut down cleanly. `arecord`/`aplay` and the SIGINT-based
+  stop-recording path checked independently against the real capture
+  device.
+- `ptt_terminal.py` with a **live microphone**, driven automatically
+  (pseudo-tty) and confirmed manually by a human tester: two full turns
+  (record -> submit -> transcribe -> LLM -> TTS -> playback), second turn
+  without a model reload, clean quit on `q`.
+- `ptt.py`'s interactive Space-hold path: **not** verified working, per
+  above -- Wayland without `input` group blocks it. This is a display-
+  server/permissions limitation, not a bug in the client.
 
 ## Known limitations (v0)
 
-- No continuous duplex / barge-in -- strictly hold-to-record,
-  release-to-submit, one turn at a time.
+- No continuous duplex / barge-in -- strictly record-then-submit, one
+  turn at a time, whichever client you use.
 - A tool call is auto-skipped (`tool_skip`) rather than answered, so a
   turn never hangs on the function channel; this does not attempt to fix
   or work around the known malformed tool-call JSON issue (see
   [docs/TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md)).
-- `pynput`'s global key listener depends on the display server; it is
-  known to work under X11/XWayland and may need adjustment under a
-  Wayland-only compositor with stricter input restrictions.
 - No packaging/systemd unit yet -- run directly with the venv's Python.
