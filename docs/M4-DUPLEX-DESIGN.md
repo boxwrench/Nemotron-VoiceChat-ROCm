@@ -490,9 +490,9 @@ fallback optimization begins merely because the source study is underway.
 - No runtime or client code changes.
 - No merge decision on `feature/push-to-talk` -- left pushed and
   unmerged, unaffected by this document.
-- No implementation of M4-0A's sliding-window re-encode strategy or
-  M4-0B's ISTFT streaming integration -- both are now scoped, neither is
-  built.
+- No implementation of the promoted M4A-1 zero-lookahead perception path has
+  been made here; the production perception implementation remains pending
+  M4A-2. M4-0B's ISTFT streaming integration is also scoped but not built.
 - No live-microphone testing was part of M4-0 -- both findings came from
   source reading, no experiment was even needed.
 - No benchmarking, no kernel/graph tuning.

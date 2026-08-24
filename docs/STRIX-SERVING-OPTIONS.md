@@ -242,8 +242,13 @@ obvious blocker       M4A-2 must establish a viable production-shaped path
 classification       RELOCATE candidate
 reusable directly?    no; feasibility only
 hardware engine       XDNA2 NPU, possibly with CPU fallback
-streaming capable?    unknown; bounded lookahead and static shapes required
-stateful?             unknown; current VoiceChat encoder state must be modeled
+streaming capable?    feasibility unknown on XDNA2; the currently selected
+                      VoiceChat contract is zero-lookahead, with the
+                      production execution shape pending M4A-2
+stateful?             current VoiceChat encoder has no useful cross-call
+                      state; an XDNA implementation must reproduce the
+                      production-shaped perception contract selected after
+                      M4A-2 rather than inventing incompatible state semantics
 latency class         critical; must fit the 80 ms frame budget plus transfers
 model/runtime         likely ONNX/compiled XDNA graph or a FastFlowLM/IRON path
 Linux support         runtime stack exists; this exact graph is unproven

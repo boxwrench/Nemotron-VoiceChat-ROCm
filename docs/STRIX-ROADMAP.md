@@ -306,7 +306,8 @@ Investigate in order:
 4. Can the VoiceChat FastConformer operators be represented?
 5. What precision is required?
 6. What input shapes must be static?
-7. Can bounded-lookahead streaming be represented?
+7. Can the exact production-shaped perception contract selected by M4A-2 be
+   represented efficiently on XDNA2?
 8. What are model-load and invocation overheads?
 
 Only convert or implement after these answers are favorable and the candidate
