@@ -1,16 +1,16 @@
 # D2: production continuous perception state
 
-Status: **BLOCKED — D2-S1 encoder state passes; current frontend normalization
-has an unbounded future contributor domain**.
+Status: **QUALIFIED — D2-S1 bounded encoder state and D2-S2 chunked PCM
+frontend pass their parity gates; exact downstream token fidelity is not yet
+universal and R9700 qualification remains unavailable here**.
 
 The D2-S1 prototype computes one new frame from finite retained state through
 all 24 VoiceChat encoder layers and preserves downstream VoiceChat behavior on
-the available fixtures. D2-S2 then audited the missing waveform→mel and causal
-subsampling boundary using DEC contributor enumeration. The existing
-`norm_per_feature=true` frontend normalizes each mel feature over the entire
-supplied utterance, so exact normalized mel output has future contributors
-across the full session. This is a production-semantics blocker, not a missing
-implementation detail.
+the available fixtures. D2-S2 then completed a source-faithful chunked
+waveform/pre-emphasis/STFT/mel path and exercised the causal subsampling
+frontier. The authoritative VoiceChat projector uses Parakeet with
+`norm_per_feature=false`; the earlier `norm_per_feature=true` blocker was the
+separate conformer path, not VoiceChat.
 
 ## Frozen evidence inherited from M4
 
@@ -206,24 +206,27 @@ closed.
 
 ## D2-S2 decision
 
-The complete D2 path cannot currently be promoted without an explicit choice
-about the global per-feature normalization. See
-[D2-S2-FRONTEND-BLOCKER.md](D2-S2-FRONTEND-BLOCKER.md) and the contributor
-ledger for the exact source-derived frontier.
+See [D2-S2-FRONTEND-BLOCKER.md](D2-S2-FRONTEND-BLOCKER.md) for the source
+correction, normalization bakeoff, exact streaming frontend parity, and
+downstream qualification.
 
 ```text
-local waveform/STFT frontier:  DERIVABLE before normalization
-causal subsampling frontier:  DERIVABLE by residue enumeration
-current normalized mel:        FULL SESSION contributor domain
-complete PCM→embedding path:   BLOCKED
+VoiceChat normalization:       raw log-mel / no normalization
+PCM → mel parity:               PASS across chunk boundaries
+causal preencoder mapping:     PASS on bounded graph probe
+complete PCM→embedding path:  QUALIFIED
+downstream exact-token gate:   QUALIFIED, not universal
+R9700 service/deadline curve:  BLOCKED by unavailable device access
 ```
 
 ## Decision gate
 
 ```text
 D2-S1 bounded encoder state: PASS
-D2 production contract:     BLOCKED by current frontend semantics
-XDNA impact:                 Strix still waits for a revised D2 contract
+D2-S2 complete frontend:     QUALIFIED
+D2 production contract:     QUALIFIED, pending drift policy and R9700 curve
+XDNA impact:                 Strix may import the logical frontend/state shape;
+                             production placement still waits for qualification
 ```
 
 The remaining blocker is specifically the full-session contributor domain from

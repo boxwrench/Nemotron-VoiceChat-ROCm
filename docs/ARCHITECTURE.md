@@ -115,15 +115,17 @@ scheduler and bounded PCM ring. It is documented in
 [research/experiments/d1-async-renderer](../research/experiments/d1-async-renderer/README.md)
 and still needs R9700/GPU-contention and real playback-device qualification.
 
-D2-S1 has a passing bounded-state encoder milestone, but the production
-contract is blocked. The D2-S1 research path retains per-layer attention
-K/V history and causal-convolution context, passes downstream token/function
-fidelity on VC01, VC03, and VC05, and plateaus at bounded state memory. It is
-currently fed the authoritative full-prefix `pre_enc_out` oracle; streaming
-waveform/mel and causal-subsampling state remain open, and D2-S2 found that
-the current per-feature mel normalization depends on the full supplied
-utterance. That normalization contract must be explicitly changed or
-relaxed before a live exact frontend can exist. See
+D2-S1 has a passing bounded-state encoder milestone, and D2-S2 now has a
+research-qualified chunked PCM frontend. The path retains per-layer attention
+K/V history and causal-convolution context, reaches a 14.55 MiB state plateau,
+and reproduces the authoritative VoiceChat raw log-mel and pre-encoder
+outputs exactly across chunk boundaries. VC01, VC04, VC05, and VC06 retain
+exact token/function traces; VC02 and VC03 remain semantically coherent but
+show bounded-encoder numerical drift that crosses sampler boundaries. The
+R9700/GPU service curve is still unavailable in the current namespace. The
+earlier normalization blocker was corrected at source: pinned VoiceChat uses
+Parakeet with `norm_per_feature=false`; the full-session normalized path is a
+separate conformer configuration. See
 [research/experiments/d2-perception-state](../research/experiments/d2-perception-state/README.md).
 
 Strix must not choose a production XDNA input shape or cache topology from

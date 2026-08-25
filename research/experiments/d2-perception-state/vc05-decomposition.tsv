@@ -1,0 +1,2 @@
+run	frames	graph_build_us_max	allocation_us_max	input_staging_us_max	compute_us_max	output_state_us_max	total_us_max	interpretation
+VC05-pause D2-S1 rerun	101	524	416	918	15031	1137	16870	steady-state compute dominated; prior ~200 ms event did not recur and remains UNKNOWN host scheduling/measurement artifact

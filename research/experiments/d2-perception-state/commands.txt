@@ -18,3 +18,27 @@ VC_D2_STATE_TEST=1 VC_D2_STATEFUL_TIMELINE=1 \
 
 # Repeat with VC03-long.wav and VC05-pause.wav. The normal production path is
 # unchanged unless both environment variables are explicitly set.
+
+# D2-S2 exact chunked PCM frontend and bounded preencoder probe.  The
+# frontend remains opt-in; VC_D2_FRONTEND_CHUNK may be changed to test chunk
+# boundary invariance (1280 is one 80 ms timeline quantum).
+VC_NO_BARGE=1 VC_FORCE_BOS=1 VC_D2_STREAMING_FRONTEND=1 \
+  VC_D2_FRONTEND_CHUNK=1280 \
+  build/llama-voicechat.cpp/<build>/bin/llama-voicechat \
+  -m models/voicechat-q8/runtime/nemotron_voicechat_11b-stt-llm-Q8_0.gguf \
+  --mmproj models/voicechat-q8/runtime/mmproj-voicechat-perception-Q8_0.gguf \
+  --audio research/corpus/VC01-short.wav \
+  --device none --gpu-layers 0
+
+# VC02/VC03/VC04/VC05/VC06 plus irregular chunks (257, 333, 4096) and
+# silence/onset controls are used for the parity/fidelity matrix.
+
+# Optional VC05 timing decomposition.  This is opt-in research telemetry and
+# emits D2DECOMP rows for graph build, allocation, input staging, compute, and
+# output/state copies.  It does not alter the default runtime.
+VC_NO_BARGE=1 VC_FORCE_BOS=1 VC_D2_STATE_TEST=1 VC_D2_DECOMPOSE=1 \
+  build/llama-voicechat.cpp/<build>/bin/llama-voicechat \
+  -m models/voicechat-q8/runtime/nemotron_voicechat_11b-stt-llm-Q8_0.gguf \
+  --mmproj models/voicechat-q8/runtime/mmproj-voicechat-perception-Q8_0.gguf \
+  --audio research/corpus/VC05-pause.wav \
+  --device none --gpu-layers 0

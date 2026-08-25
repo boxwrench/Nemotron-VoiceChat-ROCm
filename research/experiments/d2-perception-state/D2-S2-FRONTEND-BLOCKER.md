@@ -1,140 +1,206 @@
-# D2-S2: frontend contributor frontier and blocker
+# D2-S2: causal frontend and normalization decision
 
-Status: **BLOCKED under the current VoiceChat frontend semantics**
+Status: **QUALIFIED — the actual VoiceChat PCM frontend is streamable; exact
+downstream token fidelity is not yet universal and R9700 qualification is
+still unavailable in this execution namespace.**
 
-The D2-S1 bounded encoder state is valid. The complete PCM-to-embedding path
-is blocked one stage earlier by the existing conformer mel normalization, not
-by the causal subsampler or by XDNA.
+## Source correction
 
-## Authoritative source
+The earlier D2-S2 blocker was derived from the wrong preprocessor path. The
+pinned VoiceChat projector is initialized in `tools/mtmd/mtmd.cpp` as:
 
-`tools/mtmd/mtmd-audio.cpp`,
-`mtmd_audio_preprocessor_conformer::preprocess()` constructs:
-
-```text
-center_padding   = true
-preemph          = 0.97
-use_natural_log  = true
-norm_per_feature = true
-sample rate      = 16,000 Hz
-FFT              = 512
-window           = 400
-hop              = 160
-mel bins         = 128
+```cpp
+std::make_unique<mtmd_audio_preprocessor_parakeet>(ctx_a, false)
 ```
 
-The normalization implementation then computes, independently for every mel
-bin `m`:
+The `false` selects `norm_per_feature=false`: VoiceChat uses raw natural-log
+mel features, with no full-utterance per-feature normalization. The
+`norm_per_feature=true` implementation belongs to the conformer preprocessor
+used by another projector type; it is not the production VoiceChat path.
+
+That distinction changes the D2 decision. Full-session normalization remains
+a genuine dependency for the conformer path, but it is not a blocker for the
+authoritative VoiceChat frontend.
+
+## Normalization policy bakeoff
+
+The offline harness evaluated the requested causal alternatives on the same
+raw log-mel frames and then drove the existing bounded VoiceChat encoder
+prototype. `N4` was not run because no legitimate frozen calibration
+statistics were available. Results below are diagnostic evidence, not a
+request to change the VoiceChat model frontend:
+
+| Policy | VC01 result | Multi-fixture observation | Decision |
+| --- | --- | --- | --- |
+| N0 full-utterance oracle | wrong response | impossible online | control only |
+| N1 cumulative mean/variance | wrong response | causal but startup-sensitive | reject |
+| N2 trailing 100/200/400/800 frames | VC01 pass | later fixtures varied in wording; no exact contract | counterfactual |
+| N3 EWMA .01/.05/.10/.20 | .05/.10 VC01 pass | .01/.20 changed response | counterfactual |
+| N4 frozen/global stats | not run | no uncontaminated calibration stats | unavailable |
+| N5 50/100/200-frame freeze | wrong response | calibration choice changes behavior | reject |
+| N6 no normalization | VC01 pass | authoritative VoiceChat contract; PCM/frontend parity passes all controls | select |
+
+The selected D2 normalization contract is therefore:
 
 ```text
-L       = n_samples_in / 160
-mean_m  = sum(z[m,j], j = 0 .. L-1) / L
-var_m   = sum((z[m,j] - mean_m)^2, j = 0 .. L-1) / (L-1)
-y[m,j]  = (z[m,j] - mean_m) / sqrt(var_m + 1e-5)
+raw natural-log mel
+norm_per_feature = false
+no normalization state
 ```
 
-`z` is the log-mel frame before normalization. This is a source-derived
-fact, not an inference from model documentation.
+The bakeoff remains useful as evidence that inventing a causal normalizer
+would be a model-behavior change, not a harmless streaming implementation
+detail.
 
-## DEC contributor result
+## Bounded causal frontend result
 
-For an early normalized output `y[m,j]`, a later audio frame `z[m,k]`
-contributes through both `mean_m` and `var_m`. Generically, changing any
-future frame changes the already-requested normalized output. Across the
-session, the contributor domain is therefore:
+Runtime checkpoint:
 
 ```text
-candidate domain Dc: all supplied audio frames/samples used to form z
-contributor domain De for y[m,j]: all session frames 0 .. L-1
+boxwrench/llama-voicechat.cpp
+6da91b8c6e5035110721dd3319f0511376d7487c
 ```
 
-The desired bounded space:
+The research-only frontend now delivers the same PCM in bounded chunks while
+retaining only:
 
 ```text
-new samples + finite frontend state
+previous raw sample for causal pre-emphasis
+bounded pre-emphasized waveform frontier
+centered STFT frame cursor
+352-sample inter-frame overlap / end-padding state
 ```
 
-does not exist for exact preservation of the current normalized mel values.
-This is the direct-enumeration conclusion: the normalization contributor
-frontier is the full utterance, so there is no safe state-only elimination to
-implement.
-
-## What is still bounded before normalization
-
-The local, pre-normalization contributor frontier is well-defined:
+It reproduces the authoritative Parakeet framing exactly:
 
 ```text
-pre-emphasis:
-  new samples + previous sample + startup alignment
-
-STFT/mel frame j:
-  one 512-sample window at padded offset j*160
-  previous 352 waveform samples can be retained between adjacent frames
-  plus hop/frame phase and center-padding/end-of-input state
+sample rate 16 kHz
+FFT 512
+window 400
+hop 160
+center zero padding 256
+natural log
+128 mel bins
 ```
 
-With center padding, frame `j` reads padded samples
-`[160*j, 160*j + 511]`, corresponding to original sample coordinates
-`[160*j - 256, 160*j + 255]` after the known zero boundaries. The
-pre-emphasis boundary is one scalar previous sample, with the first original
-sample as the initialized predecessor under the current implementation.
-
-These states can produce exact **unnormalized** log-mel frames. They cannot
-produce exact current **normalized** frames online without future statistics.
-
-## Causal subsampling residue map
-
-The three VoiceChat temporal convolution stages use kernel 3, stride 2,
-left pad 2, and right pad 1. For temporal index `i`, each stage maps:
+Chunk sizes 1280, 257, 4096, and 333 samples all produced:
 
 ```text
-stage 1: y1[i] depends on mel rows       [2i-2, 2i]
-stage 2: y2[j] depends on stage-1 rows   [2j-2, 2j]
-         therefore raw mel rows          [4j-6, 4j]
-stage 3: y3[k] depends on stage-2 rows   [2k-2, 2k]
-         therefore raw mel rows          [8k-14, 8k]
+mel first_bad_frame = -1
+mel minimum cosine   = 1.000000000
+mel RMSE / max abs   = 0 / 0
 ```
 
-Negative coordinates are the explicit causal left-padding contributors. The
-newest productive coordinate is direct-enumeration friendly:
+This also passed the long-silence and abrupt-speech-onset controls.
+
+The causal subsampling mapping is preserved without neighboring-row repair:
 
 ```text
-stage 1 output i is authorized when mel_count > 2i
-stage 2 output j is authorized when stage1_count > 2j
-stage 3 output k is authorized when stage2_count > 2k
-pre_enc_out[k] is authorized when mel_count > 8k
+stage 1: output i uses mel       [2i-2, 2i]
+stage 2: output j uses stage-1   [2j-2, 2j]
+stage 3: output k uses stage-2   [2k-2, 2k]
+         raw mel frontier        [8k-14, 8k]
 ```
 
-The residue/phase is independently tracked at each stage; no neighboring-row
-selection is valid. A future implementation can retain two temporal feature
-rows at each stage plus the phase and exact boundary state. That result is
-calculated from the source graph, but it is not promoted into runtime code
-because the normalized mel contract currently prevents exact online input.
+The current implementation uses a 33-row aligned bounded graph probe for
+the three subsampling stages. It is deliberately not presented as the final
+minimal stage-cache implementation or production static shape. Its
+pre-encoder output matched the full-prefix oracle exactly on VC01–VC06 and
+the onset/silence controls. The probe consumes the streaming PCM frontend;
+the full-prefix tensors are retained only for parity diagnostics.
 
-## Required architectural choice
+## Downstream fidelity
 
-One of these must be explicitly selected before D2 can continue to a complete
-production path:
+The bounded encoder stage retains the D2-S1 70-frame attention history and
+8-frame causal-convolution history per layer. State reaches the existing
+14,548,992-byte plateau. With the streaming PCM frontend:
 
 ```text
-A  remove/replace per-feature normalization and revalidate the model;
-B  define a causal/running normalization contract and revalidate downstream;
-C  delay perception until utterance statistics are known;
-D  preserve full-utterance normalization and accept unbounded/future state.
+VC01 / VC04 / VC05 / VC06: exact token/function traces
+VC02 / VC03: same semantic response class, but not exact token rows
 ```
 
-The current D2 requirements reject C and D for fluent continuous operation,
-and they do not authorize A or B without a model-behavior/downstream-fidelity
-experiment. Therefore no streaming frontend implementation was committed.
+VC02 and VC03 reproduce the bounded-encoder control's response, while their
+full-prefix production controls differ after small accumulated embedding
+drift crosses a sampler boundary. The drift envelope remains the previously
+measured D2-S1 range:
+
+```text
+VC02  min cosine 0.999813020, max RMSE 0.000977375, max abs 0.00376237
+VC03  min cosine 0.999477744, max RMSE 0.0014307, max abs 0.00563987
+```
+
+This is a downstream fidelity qualification, not an exact-token PASS. The
+candidate is semantically viable, but D2 is not yet a production-ready
+contract until the drift/trace policy is explicitly accepted or the bounded
+encoder implementation closes that gap.
+
+## Bounded state and timing
+
+The logical state is:
+
+```text
+frontend waveform frontier: bounded by one centered STFT window and phase
+subsampling: bounded causal boundary rows and independent stride phases
+encoder: 14,548,992-byte plateau at 70 attention frames
+```
+
+The current CPU state-step service samples are approximately flat with
+session length after the attention cap. In the VC05 decomposition, steady
+state was compute-dominated:
+
+```text
+graph build       ~0.4 ms
+allocation        ~0.2 ms
+input staging     ~0.4–0.8 ms
+compute            ~13–15 ms
+output/state copy  ~0.8–1.1 ms
+total              <=16.9 ms in the captured 101-frame run
+```
+
+The earlier approximately 200 ms VC05 event did not recur under decomposition
+and remains `UNKNOWN`, attributed provisionally to host scheduling or a
+measurement artifact rather than an algorithmic frontend component. R9700
+GPU service curves and deadline behavior remain unmeasured because this
+namespace lacks `/dev/kfd` and `/dev/dri`.
+
+## Algebraic escape falsification
+
+For the separate conformer path with true global affine normalization,
+
+```text
+y = (z - mean) / std
+```
+
+the affine operation could be folded through the first linear operation only
+if `mean` and `std` were fixed. Once those statistics change with future
+frames, the historical pre-activation changes; SiLU, attention, convolution,
+and residual paths then require historical activations to correct the result.
+No compact exact correction was found. The lead is killed for that path:
+
+```text
+Scope: NOT_DEC / genuine dependency (conformer norm path)
+Recommendation: SUPPRESS
+Reason: De == full utterance for the current normalized frame;
+        no removable candidate-domain gap exists.
+VoiceChat relevance: not applicable; VoiceChat passes false and uses N6.
+```
+
+The broader repeated-history replacement remains `DEC_EXTENDED_STATE`.
 
 ## D2-S2 decision
 
 ```text
-waveform local frontier:       DERIVABLE
-STFT/mel local frontier:       DERIVABLE before normalization
-causal subsampling frontier:   DERIVABLE, exact residue map above
-current normalized mel frontier: FULL SESSION / not bounded
-complete PCM-to-embedding path:  BLOCKED by frontend contract
+VoiceChat normalization contract:      N6 / raw log-mel
+PCM → mel parity:                       PASS
+chunk-boundary invariance:              PASS
+causal preencoder mapping:              PASS on bounded probe
+complete PCM → embedding path:          QUALIFIED
+downstream exact-token fidelity:        QUALIFIED, not universal
+R9700 production qualification:         BLOCKED by device access
 ```
 
-This is an architectural semantics blocker, not an XDNA/compiler rejection.
+This is a real bounded frontend result, not an XDNA/compiler failure. The
+next D2 decision is whether to close the small bounded-encoder numerical
+drift before calling the contract production-ready; no new normalization
+project is justified for the actual VoiceChat path.
