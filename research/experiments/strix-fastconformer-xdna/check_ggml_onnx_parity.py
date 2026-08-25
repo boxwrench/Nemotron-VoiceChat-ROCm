@@ -74,6 +74,9 @@ def load_capture(capture: Path, one_layer: bool) -> tuple[dict[str, np.ndarray],
         ffn1_path = prefix.with_name(prefix.name + "-ffn1.f32")
         if one_layer and ffn1_path.exists():
             expected[f"layer{il}.ffn1_residual"] = f32(ffn1_path, hidden).reshape(1, 1, hidden)
+        layer_out_path = prefix.with_name(prefix.name + "-out.f32")
+        if one_layer and layer_out_path.exists():
+            expected["layer_out"] = f32(layer_out_path, hidden).reshape(1, 1, hidden)
     if not one_layer:
         expected["projected"] = f32(capture / "projected.f32", 4480).reshape(1, 4480)
     return feed, expected, meta
@@ -91,6 +94,31 @@ def main() -> int:
     feed, expected, meta = load_capture(args.capture, one_layer)
     outputs = session.run(None, feed)
     actual = {info.name: value for info, value in zip(session.get_outputs(), outputs)}
+    # S7 optionally exposes the first convolution path to locate any remaining
+    # mixed-precision mismatch after the Q8 FFN/attention contract passes.
+    # Keep this dynamic so the original S5 graphs remain valid inputs.
+    debug_map = {
+        "layer0.pos_time": "vc_stream_pos_emb.f32",
+        "layer0.attn.norm": "vc_stream_l0_attn_norm.f32",
+        "layer0.attn.qflat": "vc_stream_l0_attn_q.f32",
+        "layer0.pos_projected": "vc_stream_l0_attn_pos.f32",
+        "layer0.attn.content": "vc_stream_l0_attn_content.f32",
+        "layer0.attn.rel": "vc_stream_l0_attn_rel.f32",
+        "layer0.attn.scaled": "vc_stream_l0_attn_scaled.f32",
+        "layer0.attn.probs": "vc_stream_l0_attn_probs.f32",
+        "layer0.attn.output": "vc_stream_l0_attn_output.f32",
+        "layer0.attn_residual": "vc_stream_l0_attn_residual.f32",
+        "layer0.conv.norm": "vc_stream_l0_conv_norm.f32",
+        "layer0.conv.pw1": "vc_stream_l0_conv_pw1.f32",
+        "layer0.conv.dw": "vc_stream_l0_conv_dw.f32",
+        "layer0.conv.silu": "vc_stream_l0_conv_silu.f32",
+        "layer0.conv.pw2": "vc_stream_l0_conv_pw2.f32",
+        "layer0.conv_residual": "vc_stream_l0_conv_residual.f32",
+    }
+    for output_name, filename in debug_map.items():
+        path = args.capture / filename
+        if output_name in actual and path.exists():
+            expected[output_name] = f32(path, int(np.prod(actual[output_name].shape))).reshape(actual[output_name].shape)
     report = {
         "classification": "GGML_ONNX_PARITY_PASS",
         "capture": str(args.capture),
@@ -99,8 +127,9 @@ def main() -> int:
         "ort_providers": session.get_providers(),
         "outputs": {},
     }
-    # The complete graph has an authoritative projected output.  For one layer,
-    # only state outputs are captured by the current runtime hook.
+    # The complete graph has an authoritative projected output.  The opt-in
+    # S7 capture also exposes a one-layer final output, in addition to its
+    # state transitions, so the mixed-Q8 graph can be checked end-to-end.
     for name, reference in expected.items():
         if name not in actual:
             raise ValueError(f"ONNX graph omitted expected output {name}")

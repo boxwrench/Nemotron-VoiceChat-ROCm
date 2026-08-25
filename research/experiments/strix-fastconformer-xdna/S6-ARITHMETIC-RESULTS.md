@@ -65,13 +65,14 @@ I32 products/reduction, F16-derived scale products, and block accumulation.
 ```text
 ONNX checker / CPU execution   PASS
 topology                        15 nodes, opset 12
-CPU ONNX vs ggml linear1        max abs 0.00787
+CPU ONNX vs ggml linear1        max abs 0.00787 (pre-S7 F32-scale bug)
 ```
 
-The graph represents the block arithmetic, but CPU ONNX reduction/FMA order
-does not reproduce the ggml SIMD result at the same tight envelope as the
-independent oracle. This is an `EXACT_Q8_ONNX_PRIMITIVE_NUMERICAL_ENVELOPE`,
-not an XDNA compiler result and not yet a valid one-layer fidelity result.
+This initial graph used the F32 activation scale for the scaled-dot product.
+S7 corrected that to the deployed F32-to-F16-to-F32 stored scale while
+retaining the F32 scale for activation-integer derivation. The corrected
+primitive reaches 4.77e-6 maximum error and is an
+`EXACT_Q8_ONNX_PRIMITIVE_PASS`. See `S7-Q8-FIDELITY-RESULTS.md`.
 
 ## Candidate gate
 
@@ -82,13 +83,11 @@ full-layer, behaviorally tested implementation is required before treating any
 standard QDQ graph as a candidate. BF16 remains a negative precision control.
 
 ```text
-Q8_XDNA_CANDIDATE                  NOT YET ESTABLISHED
+Q8_XDNA_CANDIDATE                  ESTABLISHED BY S7 VC01 GATE
 XDNA_PERCEPTION_BLOCKED_BY_ARITHMETIC  NOT YET ESTABLISHED
 XDNA_PERCEPTION_REJECT             NOT YET ESTABLISHED
-XDNA                               NOT AUTHORIZED
+XDNA                               AUTHORIZED FOR PROVIDER QUALIFICATION
 ```
 
-The next single experiment is a complete one-layer Q0 ONNX graph with the
-same explicit Q8 activation conversion at every FFN/linear boundary, compared
-against a captured ggml layer and then its VC01 downstream gate. Only a
-behaviorally passing candidate may proceed to provider assignment or XDNA.
+The next single experiment is provider qualification of the S7 behaviorally
+passing exact-Q8 graph. No XDNA compiler result is present yet.

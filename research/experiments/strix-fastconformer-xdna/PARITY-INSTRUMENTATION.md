@@ -43,6 +43,13 @@ boundaries: raw and affine LayerNorm output, `linear1`, SiLU, `linear2`, the
 compares the live Q8 capture with a direct dequantized-F32 control and CPU
 ONNX. These extra roots exist solely to locate a representation split.
 
+S7 temporarily extends the same opt-in capture with layer-0 relative-position
+attention (position features, Q, projected position, content/relative scores,
+softmax and residual), convolution boundaries, and final per-layer outputs.
+Those captures establish Q8 mixed-arithmetic and axis-layout parity. They
+remain diagnostic graph roots only; neither the capture path nor any temporary
+runtime source change is committed.
+
 Two further scratch-only variables support the F32 fidelity falsification:
 
 ```text

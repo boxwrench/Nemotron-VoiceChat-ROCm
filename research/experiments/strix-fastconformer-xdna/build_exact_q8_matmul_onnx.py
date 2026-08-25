@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Build and check one exact ggml-Q8_0-style VoiceChat MatMul in ONNX.
+"""Build and check one ggml-Q8_0-style VoiceChat MatMul in ONNX.
 
 The graph deliberately uses explicit block reshape, runtime activation
-quantization, integer products and per-block F16-derived scales.  It answers
-representability on CPU ONNX only; it makes no VitisAI support claim.
+quantization, integer products and per-block F16-derived scales.  The
+activation integers deliberately use the original F32 amax/127 scale, while
+the later block scale product uses the independently stored F16 scale.  It
+answers representability on CPU ONNX only; it makes no VitisAI support claim.
 """
 
 from __future__ import annotations
@@ -54,6 +56,12 @@ def main() -> int:
     ap.add_argument("--reference", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--report", type=Path)
+    ap.add_argument(
+        "--activation-scale-storage",
+        choices=("f16", "f32"),
+        default="f16",
+        help="Scale representation used only after activation quantization; f16 matches ggml Q8_0 storage.",
+    )
     args = ap.parse_args()
     source = GGUFSource(args.source)
     rows, width, w_scale, w_q = raw_q8(source, args.tensor)
@@ -71,20 +79,29 @@ def main() -> int:
     n("Reshape", ["activation", "reshape_blocks"], "act_blocks", "reshape")
     n("Abs", ["act_blocks"], "act_abs", "abs")
     n("ReduceMax", ["act_abs"], "act_amax", "amax", axes=[2], keepdims=1)
-    n("Div", ["act_amax", "limit"], "act_scale", "scale")
-    n("Div", ["act_blocks", "act_scale"], "act_scaled", "normalize")
+    # ggml derives the int8 values from the original F32 maximum.  Its block
+    # scale is stored separately as F16 and only that stored representation is
+    # used by the later scaled dot product.
+    n("Div", ["act_amax", "limit"], "act_scale_f32", "scale_f32")
+    n("Div", ["act_blocks", "act_scale_f32"], "act_scaled", "normalize")
     n("Round", ["act_scaled"], "act_rounded", "round_nearest_even")
     n("Clip", ["act_rounded", "clip_low", "clip_high"], "act_clipped", "clip")
     n("Cast", ["act_clipped"], "act_q", "to_i32", to=TensorProto.INT32)
     n("Mul", ["weights_q", "act_q"], "products", "integer_products")
     n("ReduceSum", ["products"], "dot_i32", "integer_dot", axes=[3], keepdims=0)
     n("Cast", ["dot_i32"], "dot_f32", "dot_to_f32", to=TensorProto.FLOAT)
-    n("Reshape", ["act_scale", "reshape_scale"], "act_scale_row", "reshape_activation_scale")
+    if args.activation_scale_storage == "f16":
+        n("Cast", ["act_scale_f32"], "act_scale_f16", "store_activation_scale_f16", to=TensorProto.FLOAT16)
+        n("Cast", ["act_scale_f16"], "act_scale_stored", "load_activation_scale_f16", to=TensorProto.FLOAT)
+    else:
+        n("Identity", ["act_scale_f32"], "act_scale_stored", "retain_activation_scale_f32")
+    n("Reshape", ["act_scale_stored", "reshape_scale"], "act_scale_row", "reshape_activation_scale")
     n("Mul", ["weights_scale", "act_scale_row"], "block_scale", "block_scale_product")
     n("Mul", ["dot_f32", "block_scale"], "scaled_blocks", "scale_blocks")
     n("ReduceSum", ["scaled_blocks"], "output", "accumulate_blocks", axes=[2], keepdims=0)
     graph = helper.make_graph(nodes, "VOICECHAT_EXACT_Q8_0_MATMUL", [helper.make_tensor_value_info("activation", TensorProto.FLOAT, [1, width])], [
-        helper.make_tensor_value_info("act_scale", TensorProto.FLOAT, [1, blocks, 1]),
+        helper.make_tensor_value_info("act_scale_f32", TensorProto.FLOAT, [1, blocks, 1]),
+        helper.make_tensor_value_info("act_scale_stored", TensorProto.FLOAT, [1, blocks, 1]),
         helper.make_tensor_value_info("act_q", TensorProto.INT32, [1, blocks, QK]),
         helper.make_tensor_value_info("products", TensorProto.INT32, [1, rows, blocks, QK]),
         helper.make_tensor_value_info("dot_i32", TensorProto.INT32, [1, rows, blocks]),
@@ -98,7 +115,7 @@ def main() -> int:
     reference = np.fromfile(args.reference, dtype="<f4").reshape(1, rows)
     session = ort.InferenceSession(str(args.output), providers=["CPUExecutionProvider"])
     result = session.run(None, {"activation": activation})[-1]
-    report = {"nodes": len(nodes), "opset": 12, "providers": session.get_providers(), "q8_contract": "explicit 32-element blocks / runtime A8 / I32 dot / F16-derived scales", "parity": metric(reference, result)}
+    report = {"nodes": len(nodes), "opset": 12, "providers": session.get_providers(), "q8_contract": "explicit 32-element blocks / runtime A8 from F32 amax / I32 dot / F16-derived scales", "activation_scale_storage": args.activation_scale_storage, "parity": metric(reference, result)}
     if report["parity"]["max_abs"] < 2e-4:
         report["classification"] = "EXACT_Q8_ONNX_PRIMITIVE_PASS"
     elif report["parity"]["max_abs"] < 1e-2:

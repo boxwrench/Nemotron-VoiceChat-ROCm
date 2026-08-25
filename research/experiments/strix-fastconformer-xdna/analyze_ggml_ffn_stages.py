@@ -106,15 +106,16 @@ def source_audit(source: GGUFSource, model: onnx.ModelProto) -> list[dict[str, o
     out = []
     for source_suffix, onnx_name in bindings:
         tensor = source.take(prefix + source_suffix)
-        initializer = inits[onnx_name]
+        initializer = inits.get(onnx_name)
         out.append({
             "source_tensor": tensor["name"],
             "gguf_dtype": tensor["ty"],
             "gguf_dims": tensor["dims"],
             "gguf_block": "32 elements / 34 bytes" if tensor["ty"] == "Q8_0" else None,
             "f32_control_shape": list(source.f32(tensor["name"]).shape),
-            "onnx_initializer": onnx_name,
-            "onnx_initializer_dtype": onnx.TensorProto.DataType.Name(initializer.data_type),
+            "onnx_initializer": onnx_name if initializer else None,
+            "onnx_initializer_dtype": (onnx.TensorProto.DataType.Name(initializer.data_type)
+                                        if initializer else "EXPLICIT_Q8_BLOCK_GRAPH"),
             "export_dequantized": tensor["ty"] in {"Q8_0", "Q4_0"},
         })
     return out

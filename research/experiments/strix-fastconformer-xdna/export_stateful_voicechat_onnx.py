@@ -37,6 +37,10 @@ FF = 4096
 HIST = 70
 CONV_HIST = 8
 EPS = 1e-5
+QK = 32
+# S7 enables this only for a research graph.  The default retained F32 graph
+# remains the topology/reference exporter used by the earlier S4/S5 work.
+QUANTIZED_LINEAR = False
 
 
 def vi(name: str, shape: list[int], dtype: int = TensorProto.FLOAT):
@@ -54,6 +58,14 @@ def node(nodes, op: str, inputs: list[str], output: str | list[str], name: str, 
 
 
 def linear(nodes, initializers, source: GGUFSource, source_name: str, x: str, out: str, name: str):
+    # The deployed layer is mixed arithmetic.  S7 represents only true Q8_0
+    # MatMuls explicitly; F16 convolution pointwise projections retain their
+    # ordinary F32 ONNX representation instead of being gratuitously int8.
+    source_type = source.take(source_name)["ty"]
+    if QUANTIZED_LINEAR and source_type == "Q8_0":
+        return q8_linear(nodes, initializers, source, source_name, x, out, name)
+    if QUANTIZED_LINEAR and source_type == "F16":
+        return f16_linear(nodes, initializers, source, source_name, x, out, name)
     weight = np.asarray(source.f32(source_name), dtype=np.float32)
     if weight.ndim > 2:
         weight = np.squeeze(weight, axis=tuple(i for i, size in enumerate(weight.shape) if size == 1))
@@ -61,6 +73,95 @@ def linear(nodes, initializers, source: GGUFSource, source_name: str, x: str, ou
     wn = f"{name}.weight"
     initializers.append(init(wn, weight, np.float32))
     return node(nodes, "MatMul", [x, wn], out, name)
+
+
+def f16_linear(nodes, initializers, source: GGUFSource, source_name: str, x: str, out: str, name: str):
+    """Preserve a deployed F16 weight's F16 activation conversion boundary.
+
+    The CPU type trait selects F16 as its vec-dot type, so ggml converts the
+    F32 activation before its F16 dot kernel.  S7 makes that conversion
+    explicit instead of silently widening the source weights into an F32
+    MatMul.  The F32 cast after MatMul is the graph's surrounding arithmetic
+    type; it is not a new quantization policy.
+    """
+    weight = np.asarray(source.f32(source_name), dtype=np.float16)
+    if weight.ndim > 2:
+        weight = np.squeeze(weight, axis=tuple(i for i, size in enumerate(weight.shape) if size == 1))
+    weight = weight.T
+    prefix = f"{name}.f16"
+    initializers.append(init(f"{prefix}.weight", weight, np.float16))
+    node(nodes, "Cast", [x], f"{prefix}.activation", f"{prefix}.to_f16", to=TensorProto.FLOAT16)
+    # ggml's F16 vec-dot converts both operands to the F16 representation but
+    # accumulates the products into F32.  A plain ONNX F16 MatMul may round its
+    # result back to F16 before the surrounding graph sees it, so widen the
+    # already-quantized operands before the standard F32 MatMul.
+    node(nodes, "Cast", [f"{prefix}.activation"], f"{prefix}.activation_f32", f"{prefix}.activation_to_f32", to=TensorProto.FLOAT)
+    node(nodes, "Cast", [f"{prefix}.weight"], f"{prefix}.weight_f32", f"{prefix}.weight_to_f32", to=TensorProto.FLOAT)
+    return node(nodes, "MatMul", [f"{prefix}.activation_f32", f"{prefix}.weight_f32"], out, name)
+
+
+def q8_linear(nodes, initializers, source: GGUFSource, source_name: str, x: str, out: str, name: str):
+    """Emit a mixed-precision ggml-Q8_0 MatMul with shape-preserving output.
+
+    ggml derives activation integers from an F32 block maximum, stores a
+    separate F16 scale, and uses the re-expanded F16 value only when scaling
+    the I32 dot product.  Every invocation of this helper re-quantizes its
+    activation, matching the deployed execution boundary rather than sharing
+    an earlier Q8 representation across operators.
+    """
+    tensor = source.take(source_name)
+    if tensor["ty"] != "Q8_0":
+        raise ValueError(f"{source_name}: Q8 research export expected Q8_0, got {tensor['ty']}")
+    rows, width = reversed(tensor["dims"])
+    if width % QK:
+        raise ValueError(f"{source_name}: width {width} is not Q8_0 block aligned")
+    blocks = width // QK
+    raw = np.frombuffer(source.raw(tensor), dtype=np.uint8).reshape(rows, blocks, 34)
+    w_scale = raw[..., :2].copy().view(np.float16).reshape(rows, blocks).astype(np.float32)
+    w_q = raw[..., 2:].view(np.int8).reshape(rows, blocks, QK).astype(np.int32)
+    prefix = f"{name}.q8"
+    initializers.extend([
+        init(f"{prefix}.reshape_in", [-1, blocks, QK], np.int64),
+        init(f"{prefix}.axis_one", [1], np.int64),
+        init(f"{prefix}.axis_two", [2], np.int64),
+        init(f"{prefix}.axis_three", [3], np.int64),
+        init(f"{prefix}.limit", np.float32(127.0)),
+        init(f"{prefix}.clip_low", np.float32(-128.0)),
+        init(f"{prefix}.clip_high", np.float32(127.0)),
+        init(f"{prefix}.weights_q", w_q[np.newaxis], np.int32),
+        init(f"{prefix}.weights_scale", w_scale[np.newaxis], np.float32),
+        init(f"{prefix}.slice_start", [0], np.int64),
+        init(f"{prefix}.slice_end", [-1], np.int64),
+        init(f"{prefix}.slice_axis", [0], np.int64),
+        init(f"{prefix}.slice_step", [1], np.int64),
+        init(f"{prefix}.output_width", [rows], np.int64),
+    ])
+    node(nodes, "Reshape", [x, f"{prefix}.reshape_in"], f"{prefix}.act_blocks", f"{prefix}.reshape")
+    node(nodes, "Abs", [f"{prefix}.act_blocks"], f"{prefix}.act_abs", f"{prefix}.abs")
+    node(nodes, "ReduceMax", [f"{prefix}.act_abs"], f"{prefix}.act_amax", f"{prefix}.amax", axes=[2], keepdims=1)
+    node(nodes, "Div", [f"{prefix}.act_amax", f"{prefix}.limit"], f"{prefix}.act_scale_f32", f"{prefix}.scale_f32")
+    node(nodes, "Div", [f"{prefix}.act_blocks", f"{prefix}.act_scale_f32"], f"{prefix}.act_scaled", f"{prefix}.normalize")
+    node(nodes, "Round", [f"{prefix}.act_scaled"], f"{prefix}.act_rounded", f"{prefix}.round_nearest_even")
+    node(nodes, "Clip", [f"{prefix}.act_rounded", f"{prefix}.clip_low", f"{prefix}.clip_high"], f"{prefix}.act_clipped", f"{prefix}.clip")
+    node(nodes, "Cast", [f"{prefix}.act_clipped"], f"{prefix}.act_q", f"{prefix}.to_i32", to=TensorProto.INT32)
+    node(nodes, "Unsqueeze", [f"{prefix}.act_q", f"{prefix}.axis_one"], f"{prefix}.act_q_expanded", f"{prefix}.expand_activation")
+    node(nodes, "Mul", [f"{prefix}.weights_q", f"{prefix}.act_q_expanded"], f"{prefix}.products", f"{prefix}.integer_products")
+    node(nodes, "ReduceSum", [f"{prefix}.products", f"{prefix}.axis_three"], f"{prefix}.dot_i32", f"{prefix}.integer_dot", keepdims=0)
+    node(nodes, "Cast", [f"{prefix}.dot_i32"], f"{prefix}.dot_f32", f"{prefix}.dot_to_f32", to=TensorProto.FLOAT)
+    node(nodes, "Cast", [f"{prefix}.act_scale_f32"], f"{prefix}.act_scale_f16", f"{prefix}.store_scale_f16", to=TensorProto.FLOAT16)
+    node(nodes, "Cast", [f"{prefix}.act_scale_f16"], f"{prefix}.act_scale_stored", f"{prefix}.load_scale_f16", to=TensorProto.FLOAT)
+    node(nodes, "Squeeze", [f"{prefix}.act_scale_stored", f"{prefix}.axis_two"], f"{prefix}.act_scale_flat", f"{prefix}.squeeze_scale")
+    node(nodes, "Unsqueeze", [f"{prefix}.act_scale_flat", f"{prefix}.axis_one"], f"{prefix}.act_scale_row", f"{prefix}.expand_scale")
+    node(nodes, "Mul", [f"{prefix}.weights_scale", f"{prefix}.act_scale_row"], f"{prefix}.block_scale", f"{prefix}.block_scale_product")
+    node(nodes, "Mul", [f"{prefix}.dot_f32", f"{prefix}.block_scale"], f"{prefix}.scaled_blocks", f"{prefix}.scale_blocks")
+    node(nodes, "ReduceSum", [f"{prefix}.scaled_blocks", f"{prefix}.axis_two"], f"{prefix}.flat_output", f"{prefix}.accumulate_blocks", keepdims=0)
+    # Restore all leading dimensions of the input and replace only its final
+    # feature width.  This covers both [1,1,D] frame paths and [T,D] relative
+    # position projection without hard-coding their batch rank.
+    node(nodes, "Shape", [x], f"{prefix}.input_shape", f"{prefix}.input_shape")
+    node(nodes, "Slice", [f"{prefix}.input_shape", f"{prefix}.slice_start", f"{prefix}.slice_end", f"{prefix}.slice_axis", f"{prefix}.slice_step"], f"{prefix}.leading_shape", f"{prefix}.leading_shape")
+    node(nodes, "Concat", [f"{prefix}.leading_shape", f"{prefix}.output_width"], f"{prefix}.output_shape", f"{prefix}.output_shape", axis=0)
+    return node(nodes, "Reshape", [f"{prefix}.flat_output", f"{prefix}.output_shape"], out, name)
 
 
 def affine_norm(nodes, initializers, source: GGUFSource, prefix: str, x: str, out: str, name: str):
@@ -144,8 +245,12 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
     q_u_bias = f"{b}.attn.pos_bias_u"
     q_v_bias = f"{b}.attn.pos_bias_v"
     initializers.extend([
-        init(q_u_bias, source.f32(p + "self_attn.pos_bias_u").T.reshape(1, H, 1, DH), np.float32),
-        init(q_v_bias, source.f32(p + "self_attn.pos_bias_v").T.reshape(1, H, 1, DH), np.float32),
+        # GGUFSource returns this [heads, head_dim] tensor in the same
+        # head-major order used by the live ggml add.  Transposing it before
+        # reshaping silently interleaves heads and corrupts both attention
+        # score paths despite Q/K/V themselves matching.
+        init(q_u_bias, source.f32(p + "self_attn.pos_bias_u").reshape(1, H, 1, DH), np.float32),
+        init(q_v_bias, source.f32(p + "self_attn.pos_bias_v").reshape(1, H, 1, DH), np.float32),
     ])
     q_u = node(nodes, "Add", [qh, q_u_bias], f"{b}.attn.q_u", f"{b}.attn.q_u")
     q_v = node(nodes, "Add", [qh, q_v_bias], f"{b}.attn.q_v", f"{b}.attn.q_v")
@@ -159,19 +264,32 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
     initializers.extend([
         init(f"{b}.axis_zero", [0], np.int64),
         init(f"{b}.axis_one", [1], np.int64),
+        init(f"{b}.pos_interleaved_shape", [2 * (HIST + 1) - 1, D], np.int64),
     ])
     node(nodes, "Unsqueeze", ["pos_freqs", f"{b}.axis_one"], pf, f"{b}.pos_freqs_unsqueeze")
     node(nodes, "Unsqueeze", ["rel_positions", f"{b}.axis_zero"], rp, f"{b}.rel_positions_unsqueeze")
     node(nodes, "Mul", [pf, rp], f"{b}.theta", f"{b}.theta")
     node(nodes, "Sin", [f"{b}.theta"], f"{b}.sin", f"{b}.sin")
     node(nodes, "Cos", [f"{b}.theta"], f"{b}.cos", f"{b}.cos")
-    node(nodes, "Concat", [f"{b}.sin", f"{b}.cos"], f"{b}.pos_flat", f"{b}.pos_concat", axis=0)
-    node(nodes, "Transpose", [f"{b}.pos_flat"], f"{b}.pos_time", f"{b}.pos_time", perm=[1, 0])
+    # ggml concatenates sin/cos along its unit leading dimension before
+    # reshaping, yielding [sin(f0), cos(f0), sin(f1), cos(f1), ...] for each
+    # relative position.  A plain axis-0 ONNX concat would instead place all
+    # sine features before all cosine features and changes the deployed model.
+    node(nodes, "Unsqueeze", [f"{b}.sin", f"{b}.axis_one"], f"{b}.sin_pair", f"{b}.sin_pair")
+    node(nodes, "Unsqueeze", [f"{b}.cos", f"{b}.axis_one"], f"{b}.cos_pair", f"{b}.cos_pair")
+    node(nodes, "Concat", [f"{b}.sin_pair", f"{b}.cos_pair"], f"{b}.pos_pair", f"{b}.pos_pair", axis=1)
+    node(nodes, "Transpose", [f"{b}.pos_pair"], f"{b}.pos_time_3d", f"{b}.pos_time_3d", perm=[2, 0, 1])
+    node(nodes, "Reshape", [f"{b}.pos_time_3d", f"{b}.pos_interleaved_shape"], f"{b}.pos_time", f"{b}.pos_time")
     pos = linear(nodes, initializers, source, p + "self_attn.linear_pos.weight", f"{b}.pos_time", f"{b}.pos_projected", f"{b}.attn.linear_pos")
-    pos_shape = f"{b}.attn.pos_shape"
-    initializers.append(init(pos_shape, [1, H, DH, 2 * (HIST + 1) - 1], np.int64))
-    node(nodes, "Reshape", [pos, pos_shape], f"{b}.pos_heads_raw", f"{b}.pos_heads_reshape")
-    node(nodes, "Transpose", [f"{b}.pos_heads_raw"], f"{b}.pos_heads", f"{b}.pos_heads", perm=[0, 1, 3, 2])
+    pos_time_shape = f"{b}.attn.pos_time_shape"
+    initializers.append(init(pos_time_shape, [2 * (HIST + 1) - 1, H, DH], np.int64))
+    # `pos` is time-major [W, H*Dh].  The live ggml view consumes the same
+    # values as [Dh, H, W], so transpose time/head/channel before making the
+    # [B,H,Dh,W] MatMul operand.  A direct reshape changes relative attention
+    # even when the position projection values themselves match.
+    node(nodes, "Reshape", [pos, pos_time_shape], f"{b}.pos_time_heads", f"{b}.pos_time_heads")
+    node(nodes, "Transpose", [f"{b}.pos_time_heads"], f"{b}.pos_heads_unbatched", f"{b}.pos_heads_transpose", perm=[1, 2, 0])
+    node(nodes, "Unsqueeze", [f"{b}.pos_heads_unbatched", f"{b}.axis_zero"], f"{b}.pos_heads_raw", f"{b}.pos_heads_batch")
     # q_v is [B,H,1,Dh]; the raw position projection is [B,H,Dh,W].
     rel_all = node(nodes, "MatMul", [q_v, f"{b}.pos_heads_raw"], f"{b}.attn.rel_all", f"{b}.attn.rel_scores")
     starts = init(f"{b}.rel_starts", [0, 0, 0, 0], np.int64)
@@ -240,6 +358,22 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
             vi(f"{b}.ffn1.down", [1, 1, D]),
             vi(f"{b}.ffn1.half", [1, 1, D]),
             vi(f"{b}.ffn1_residual", [1, 1, D]),
+            vi(f"{b}.attn.norm", [1, 1, D]),
+            vi(f"{b}.attn.qflat", [1, 1, D]),
+            vi(f"{b}.pos_time", [2 * (HIST + 1) - 1, D]),
+            vi(f"{b}.pos_projected", [2 * (HIST + 1) - 1, D]),
+            vi(f"{b}.attn.content", [1, H, 1, HIST + 1]),
+            vi(f"{b}.attn.rel", [1, H, 1, HIST + 1]),
+            vi(f"{b}.attn.scaled", [1, H, 1, HIST + 1]),
+            vi(f"{b}.attn.probs", [1, H, 1, HIST + 1]),
+            vi(f"{b}.attn.output", [1, 1, D]),
+            vi(f"{b}.attn_residual", [1, 1, D]),
+            vi(f"{b}.conv.norm", [1, 1, D]),
+            vi(f"{b}.conv.pw1", [1, 1, 2 * D]),
+            vi(f"{b}.conv.dw", [1, D, 1]),
+            vi(f"{b}.conv.silu", [1, 1, D]),
+            vi(f"{b}.conv.pw2", [1, 1, D]),
+            vi(f"{b}.conv_residual", [1, 1, D]),
         ])
     graph = helper.make_graph(
         nodes,
@@ -406,9 +540,13 @@ def main() -> int:
                     help="expose first-FFN stages/statistics for ggml attribution (one layer only)")
     ap.add_argument("--dynamic-history-mask", action="store_true",
                     help="make the causal attention validity mask an input for startup-state research")
+    ap.add_argument("--q8-linear", action="store_true",
+                    help="research-only: represent Q8_0 ggml MatMuls with explicit activation Q8 blocks")
     args = ap.parse_args()
     if not 0 <= args.layer < 24:
         raise SystemExit("--layer must be in [0, 23]")
+    global QUANTIZED_LINEAR
+    QUANTIZED_LINEAR = args.q8_linear
     source = GGUFSource(args.input)
     if args.debug_intermediates and args.layers != 1:
         raise SystemExit("--debug-intermediates is only supported with --layers 1")
