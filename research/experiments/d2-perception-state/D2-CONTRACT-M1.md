@@ -11,8 +11,8 @@ waveform frontend has already been replaced.
 ```text
 repository: boxwrench/llama-voicechat.cpp
 branch:     research/d2-stateful-perception
-commit:     83f1829e8e89306579ffb18c11c840460f62050e
-parent:     14676822b9b973070ee04d1d8ebf5ba11fff22b2
+commit:     5e6761ad727c91aed868dcb983a17e41a264ff6f
+parent:     83f1829e8e89306579ffb18c11c840460f62050e
 ```
 
 The commit is a research-only opt-in path. Normal VoiceChat execution is
@@ -70,15 +70,18 @@ token/function traces. VC01 produced the same final text in both paths:
 Embedding drift is retained as a diagnostic, not used as the sole acceptance
 gate.
 
-CPU-only service samples from the same prototype:
+CPU-only service samples from the p99-instrumented prototype:
 
 ```text
-VC01: mean 12.143 ms, p95 13.901 ms
-VC03: mean 14.817 ms, p95 16.180 ms
+VC01: mean 11.678 ms, p95 13.627 ms, p99 13.719 ms
+VC03: mean 15.735 ms, p95 18.821 ms, p99 19.930 ms
+VC05: mean 57.153 ms, p95 131.981 ms, p99 200.366 ms
 ```
 
-These are not the R9700 production curve and do not establish 80 ms deadline
-behavior on the reference GPU.
+VC05's tail is a single-run CPU-host outlier; it is retained as observed
+evidence, not treated as an algorithmic steady-state estimate. These are not
+the R9700 production curve and do not establish 80 ms deadline behavior on
+the reference GPU.
 
 ## Deliberately open production fields
 

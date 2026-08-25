@@ -161,14 +161,17 @@ matched their full-prefix controls exactly. VC01's final text was
 `</s><s>The capital of France is Paris.` in both paths. These are stronger
 acceptance evidence than embedding cosine alone.
 
-On the available CPU build, measured per-frame stateful encoder service was:
+On the available CPU build, the p99-instrumented samples were:
 
 ```text
-VC01 mean 12.143 ms, p95 13.901 ms
-VC03 mean 14.817 ms, p95 16.180 ms
+VC01 mean 11.678 ms, p95 13.627 ms, p99 13.719 ms
+VC03 mean 15.735 ms, p95 18.821 ms, p99 19.930 ms
+VC05 mean 57.153 ms, p95 131.981 ms, p99 200.366 ms
 ```
 
-This is not the R9700/GPU production curve and is not a D3 readiness claim.
+VC05 includes a large single-run CPU-host outlier; it is preserved rather than
+discarded. This is not the R9700/GPU production curve and is not a D3
+readiness claim.
 
 ## D2-CONTRACT-M1: encoder-state import boundary
 
