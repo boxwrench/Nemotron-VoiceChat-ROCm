@@ -5,7 +5,7 @@ set -euo pipefail
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 binary="$repo_dir/build/hip-gfx1201/bin/llama-voicechat"
 runtime="$repo_dir/models/voicechat-q8/runtime"
-corpus="$repo_dir/research/amd-voicechat/corpus"
+corpus="$repo_dir/research/corpus"
 
 export ROCR_VISIBLE_DEVICES=1
 export GGML_CUDA_DISABLE_GRAPHS=1
