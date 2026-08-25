@@ -1,0 +1,20 @@
+# D2-S1 research commands. Run from the product repository root with the
+# runtime checkout built separately and the paths adjusted to that checkout.
+
+# Oracle comparison only:
+VC_D2_STATE_TEST=1 build/llama-voicechat.cpp/<build>/bin/llama-voicechat \
+  -m models/voicechat-q8/runtime/nemotron_voicechat_11b-stt-llm-Q8_0.gguf \
+  --mmproj models/voicechat-q8/runtime/mmproj-voicechat-perception-Q8_0.gguf \
+  --audio research/corpus/VC01-short.wav \
+  --device none --gpu-layers 0
+
+# Research-only downstream substitution:
+VC_D2_STATE_TEST=1 VC_D2_STATEFUL_TIMELINE=1 \
+  build/llama-voicechat.cpp/<build>/bin/llama-voicechat \
+  -m models/voicechat-q8/runtime/nemotron_voicechat_11b-stt-llm-Q8_0.gguf \
+  --mmproj models/voicechat-q8/runtime/mmproj-voicechat-perception-Q8_0.gguf \
+  --audio research/corpus/VC01-short.wav \
+  --device none --gpu-layers 0
+
+# Repeat with VC03-long.wav and VC05-pause.wav. The normal production path is
+# unchanged unless both environment variables are explicitly set.

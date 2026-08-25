@@ -2,6 +2,8 @@
 
 Status: **QUALIFY** — the renderer-queue architecture works in a CPU-only
 prototype; reference-GPU and real playback-device qualification remain open.
+This is the D1-Q stopping point until an ordinary R9700 host shell can expose
+the GPU and ALSA devices.
 
 This experiment removes incremental codec/ISTFT work from the producer's
 synchronous path. It does not claim that the complete continuous VoiceChat
@@ -150,6 +152,13 @@ OPEN:
   integration with D3's live timeline and playback event sink
   real text-delta scheduling rather than the current TTS-frame publisher
 ```
+
+The current execution namespace has no `/dev/kfd`, GPU render node, or
+`/dev/snd`, so it cannot produce the requested R9700/ALSA result. This is a
+host-access boundary, not evidence against the queue architecture. The
+qualification run must be repeated outside this namespace with the same
+model/settings for the native-disabled and async cases, including real
+`playback_begin`, ALSA underruns, GPU contention, and main-frame p95/p99.
 
 The contract above is the D1 import candidate for later hardware work. Strix
 must not import the research runtime branch until D2 and the live D3 timeline

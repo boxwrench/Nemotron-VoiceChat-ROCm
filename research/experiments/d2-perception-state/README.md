@@ -1,9 +1,14 @@
 # D2: production continuous perception state
 
-Status: **BLOCKED — contract not frozen**.
+Status: **QUALIFY — bounded stateful encoder stack proven; production contract
+not yet frozen**.
 
-This is an architecture boundary, not an XDNA or compiler failure. The current
-VoiceChat runtime has no stateful production perception path to measure.
+The D2-S1 prototype now computes one new frame from finite retained state
+through all 24 VoiceChat encoder layers and preserves downstream VoiceChat
+behavior on the available fixtures. It begins at the authoritative full-prefix
+`pre_enc_out` oracle, however: streaming waveform→mel and causal subsampling
+state have not yet been integrated into the candidate. Therefore this is a
+real stateful-encoder milestone, not yet the importable production D2 path.
 
 ## Frozen evidence inherited from M4
 
@@ -33,7 +38,7 @@ The product still consumes the reconstructed M3.1 runtime:
 09f4c7b4a414ae060a2325714e612dfd9c057811
 ```
 
-The current call chain is:
+The old production call chain is:
 
 ```text
 mtmd_encode_chunk()
@@ -75,6 +80,40 @@ window data, and mel filters—not streaming waveform history. Exact stateful
 maintenance must therefore define sample/frame alignment as well as encoder
 state.
 
+## D2-S1 result: bounded encoder state
+
+Runtime research commit:
+
+```text
+83f1829e8e89306579ffb18c11c840460f62050e
+```
+
+The prototype is exposed only through `VC_D2_STATE_TEST=1`, with optional
+`VC_D2_STATEFUL_TIMELINE=1` for a research-only downstream run. The normal
+VoiceChat path is unchanged.
+
+For each new 1024-wide pre-encoder frame it retains:
+
+```text
+24 × attention K history, at most 70 frames per layer
+24 × attention V history, at most 70 frames per layer
+24 × causal convolution histories, 8 frames × 1024 values per layer
+relative-position cursor represented by the bounded current history
+```
+
+The K/V cache evicts the oldest frame before appending the new one. The
+convolution history is fixed at eight frames. Measured state memory is:
+
+```text
+VC01  38 frames:  8,257,536 bytes
+VC02  54 frames: 11,403,264 bytes
+VC03 281 frames: 14,548,992 bytes
+VC05 101 frames: 14,548,992 bytes
+```
+
+The 14,548,992-byte plateau is the 70-frame attention limit plus fixed
+convolution state; it does not grow with session duration.
+
 ## Minimum sufficient state to investigate
 
 The first state decomposition is:
@@ -88,10 +127,10 @@ The first state decomposition is:
 | FFN/residual/norm | current frame only after required layer inputs exist | no long history beyond layer boundary state | full-layer parity |
 | projection | current encoder output | no temporal cache | projected embedding parity |
 
-This is a hypothesis about a causal incremental decomposition, not a frozen
-production design. The current graph's all-at-once implementation does not
-prove that this state layout is sufficient; it identifies the state that a
-minimal exactness experiment must expose.
+The first four rows are now split by evidence. The encoder attention,
+convolution, residual, normalization, and projection rows are implemented and
+validated in D2-S1. The waveform/mel and causal-subsampling rows remain the
+production completion work.
 
 Important consequences:
 
@@ -104,50 +143,72 @@ Important consequences:
 - output selection must remain the production rule: the embedding aligned to
   the newly available 80 ms frame, not an arbitrary final-prefix row.
 
-## Required D2 contract
+## D2-S1 parity and downstream fidelity
 
-No D2 contract SHA exists yet. The following fields remain unfilled until an
-incremental implementation passes downstream fidelity and timing gates:
+The bounded encoder stack was driven by the exact full-prefix `pre_enc_out`
+frames and compared with the full-prefix 4480-wide embeddings. Diagnostic
+floating-point drift accumulates slowly, but downstream behavior remained
+exact in the saved token/function traces:
+
+| Fixture | Frames | Minimum cosine | Max RMSE | Max abs | Downstream result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| VC01 short | 38 | 0.999862075 | 0.000716533 | 0.00263504 | exact token/function trace |
+| VC03 long | 281 | 0.999477744 | 0.0014307 | 0.00563987 | exact token/function trace |
+| VC05 pause | 101 | 0.999720812 | 0.000905603 | 0.00348644 | exact token/function trace |
+
+The VC03 trace contains 291 downstream dump rows and VC05 contains 159; both
+matched their full-prefix controls exactly. VC01's final text was
+`</s><s>The capital of France is Paris.` in both paths. These are stronger
+acceptance evidence than embedding cosine alone.
+
+On the available CPU build, measured per-frame stateful encoder service was:
 
 ```text
-exact llama-voicechat.cpp SHA
-history strategy
-cached tensor/state definition
-memory growth behavior
-input cadence
-input tensor dimensions and dynamic/static dimensions
-output-frame selection rule
-reset/session semantics
-warmup semantics
-mean/p95/p99 service time versus session duration
-80 ms deadline misses
-downstream behavioral fidelity suite and results
+VC01 mean 12.143 ms, p95 13.901 ms
+VC03 mean 14.817 ms, p95 16.180 ms
 ```
+
+This is not the R9700/GPU production curve and is not a D3 readiness claim.
+
+## D2-CONTRACT-M1: encoder-state import boundary
+
+This contract is frozen for the bounded encoder-stage result, with the
+frontend boundary intentionally explicit:
+
+exact llama-voicechat.cpp SHA: exact runtime research commit in D2-CONTRACT-M1
+history strategy: bounded causal encoder state; no growing raw prefix
+cached state: per-layer K/V history (≤70 frames) plus 8-frame conv history
+memory growth: constant after the 70-frame attention limit
+input cadence: one pre-encoder frame per 80 ms timeline step (12.5 Hz)
+input tensor: F32 `pre_enc_out`, `[1024]` for the current frame
+dynamic/static shape: graph is rebuilt per bounded history length in prototype;
+                      production static-shape choice remains open
+output rule: projected 4480-wide embedding for the newly supplied frame
+reset/session: destroy or reinitialize the stream; no state crosses sessions
+warmup: first bounded graph allocation/compilation is outside steady state
+service curve: CPU-only evidence above; R9700/GPU curve not yet measured
+deadline misses: not established on the production GPU path
+fidelity: exact downstream token/function traces for VC01, VC03, and VC05
+```
+
+The missing fields for a production import are specifically the streaming
+frontend state, causal subsampling boundary/stride state, final production
+static-shape strategy, and R9700 service/deadline curve. Strix must not treat
+the `[1024]` pre-encoder boundary as the final live audio API until those are
+closed.
 
 ## Decision gate
 
 ```text
-D2: BLOCKED / NOT FROZEN
-XDNA impact: none yet; Strix must wait for this contract
+D2-S1 bounded encoder state: PASS
+D2 production contract:     QUALIFY / not yet frozen
+XDNA impact:                 Strix still waits for the completed D2 contract
 ```
 
-The blocker is the missing stateful runtime implementation and its validation
-suite, not missing ONNX, missing XDNA access, or an unsupported operator.
-
-The next single experiment is **D2-S1: exact one-frame state decomposition**:
-
-1. add temporary instrumentation to the reference graph to capture mel,
-   `pre_enc_out`, and per-layer boundary tensors for one next frame;
-2. implement a scratch frame-step candidate that retains pre-emphasis/STFT,
-   subsampling, per-layer attention K/V, and convolution context;
-3. compare its 4480-wide embedding against the full-prefix graph at identical
-   frame positions;
-4. run the resulting embeddings through the existing VoiceChat timeline and
-   downstream fidelity suite before measuring long-session service time.
-
-This is deliberately one state-decomposition experiment, not another window
-sweep. It must remain a temporary research change until exactness and
-downstream behavior are established.
+The remaining blocker is a specific production-boundary gap, not missing ONNX,
+XDNA access, or an unsupported operator: prove exact streaming waveform→mel
+and causal subsampling maintenance, then measure the resulting full path on
+R9700.
 
 ## Wake-up information for Strix
 
