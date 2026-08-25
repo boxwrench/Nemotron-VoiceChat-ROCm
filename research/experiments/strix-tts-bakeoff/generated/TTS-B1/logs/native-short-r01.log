@@ -682,4 +682,4 @@ init_audio: audio input is in experimental stage and may have reduced quality:
 0.01.371.806 I voicechat-tts: kv cache 790 frames, 194 MiB
 0.01.455.370 I voicechat-tts: ready, 28 backbone blocks, ctx 790, seed 42
 0.01.455.632 I say: 12 tokens at 1 per 1 frames
-0.04.092.337 I voicechat-tts: wrote /tmp/strix-tts-b1-967l5hpu.wav, 50 frames, 4.00 s
+0.04.092.337 I voicechat-tts: wrote <temporary-wav>, 50 frames, 4.00 s

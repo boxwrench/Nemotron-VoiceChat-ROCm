@@ -5,21 +5,21 @@ Collection is read-only; failures are preserved verbatim.
 ## uname
 
 + uname -a
-Linux Nimo 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+Linux <host> 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
 
 exit=0
 
 ## identity
 
 + id
-uid=1000(keith) gid=1000(keith) groups=1000(keith),65534(nogroup)
+uid=1000(<user>) gid=1000(<user>) groups=1000(<user>),65534(nogroup)
 
 exit=0
 
 ## groups
 
 + groups
-keith nogroup
+<user> nogroup
 
 exit=0
 
@@ -88,8 +88,8 @@ exit=0
 850 844 0:6 /tty /dev/tty rw,nosuid,relatime master:2 - devtmpfs udev rw,size=63654956k,nr_inodes=15913739,mode=755,inode64
 851 844 0:65 / /dev/pts rw,nosuid,noexec,relatime - devpts devpts rw,mode=620,ptmxmode=666
 852 819 259:2 /tmp /tmp rw,nosuid,nodev,relatime master:1 - ext4 /dev/nvme0n1p2 rw,errors=remount-ro,stripe=64
-856 819 259:2 /home/keith/Desktop /home/keith/Desktop rw,nosuid,nodev,relatime master:1 - ext4 /dev/nvme0n1p2 rw,errors=remount-ro,stripe=64
-861 852 259:2 /tmp/codex-bwrap-synthetic-mount-targets-1000 /tmp/codex-bwrap-synthetic-mount-targets-1000 ro,nosuid,nodev,relatime master:1 - ext4 /dev/nvme0n1p2 rw,errors=remount-ro,stripe=64
+856 819 259:2 <repo> <repo> rw,nosuid,nodev,relatime master:1 - ext4 /dev/nvme0n1p2 rw,errors=remount-ro,stripe=64
+861 852 259:2 /tmp/<sandbox-mount-target> /tmp/<sandbox-mount-target> ro,nosuid,nodev,relatime master:1 - ext4 /dev/nvme0n1p2 rw,errors=remount-ro,stripe=64
 
 exit=0
 
@@ -163,14 +163,14 @@ exit=0
 ## device ownership groups
 
 + getent group video
-video:x:44:keith,ollama,friend
+video:x:44:<user>,ollama,friend
 
 exit=0
 
 ## device ownership groups
 
 + getent group render
-render:x:992:keith,ollama,lemonade,friend
+render:x:992:<user>,ollama,lemonade,friend
 
 exit=0
 
@@ -601,7 +601,7 @@ exit=1
     }
   ],
   "host": {
-    "hostname": "Nimo",
+    "hostname": "<host>",
     "kernel": {
       "release": "6.17.0-35-generic",
       "version": "#35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2"
