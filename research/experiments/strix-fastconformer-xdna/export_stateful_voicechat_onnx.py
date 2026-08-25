@@ -91,7 +91,7 @@ def add_ffn(nodes, initializers, source: GGUFSource, weight_prefix: str, norm_pr
     return node(nodes, "Add", [residual, half], out, f"{name}.residual")
 
 
-def build_layer(source: GGUFSource, layer_index: int = 0):
+def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: bool = False):
     p = SRC + f"encoder.layers.{layer_index}."
     b = f"layer{layer_index}"
     nodes = []
@@ -202,16 +202,21 @@ def build_layer(source: GGUFSource, layer_index: int = 0):
                   cur, cur, f"{b}.ffn2_residual", f"{b}.ffn2")
     output = affine_norm(nodes, initializers, source, p + "norm_out", cur, "layer_out", f"{b}.final_norm")
 
+    outputs = [
+        vi(output, [1, 1, D]),
+        vi("kh_new", [1, H, 1, DH]),
+        vi("vh_new", [1, H, 1, DH]),
+        vi("conv_new", [1, 1, D]),
+    ]
+    if debug_intermediates:
+        # Exposed only for ggml attribution. This is the first point before
+        # attention where the captured runtime and ONNX graph can diverge.
+        outputs.append(vi(f"{b}.ffn1_residual", [1, 1, D]))
     graph = helper.make_graph(
         nodes,
         f"VOICECHAT_STATEFUL_LAYER_{layer_index}_H{HIST}",
         inputs,
-        [
-            vi(output, [1, 1, D]),
-            vi("kh_new", [1, H, 1, DH]),
-            vi("vh_new", [1, H, 1, DH]),
-            vi("conv_new", [1, 1, D]),
-        ],
+        outputs,
         initializer=initializers,
     )
     # Expose the state tensors without copying them through extra graph nodes.
@@ -364,11 +369,15 @@ def main() -> int:
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--layer", type=int, default=0)
     ap.add_argument("--layers", type=int, choices=(1, 24), default=1)
+    ap.add_argument("--debug-intermediates", action="store_true",
+                    help="expose first-FFN output for ggml attribution (one layer only)")
     args = ap.parse_args()
     if not 0 <= args.layer < 24:
         raise SystemExit("--layer must be in [0, 23]")
     source = GGUFSource(args.input)
-    model = build_stack(source, args.layers, validate=args.layers != 24) if args.layers == 24 else build_layer(source, args.layer)
+    if args.debug_intermediates and args.layers != 1:
+        raise SystemExit("--debug-intermediates is only supported with --layers 1")
+    model = build_stack(source, args.layers, validate=args.layers != 24) if args.layers == 24 else build_layer(source, args.layer, args.debug_intermediates)
     external_dir = None
     if args.layers == 24:
         external_dir = externalize_initializers(model, args.output)

@@ -3,6 +3,10 @@
 This is a compiler/parity checkpoint, not a VoiceChat integration result.
 Generated ONNX and external-data files are ignored and remain local.
 
+> Historical S4 checkpoint. S5 subsequently established that the direct ONNX
+> representation fails authoritative ggml-runtime parity before any XDNA
+> compiler handoff. See [`S5-QUALIFICATION-RESULTS.md`](S5-QUALIFICATION-RESULTS.md).
+
 ## Imported contract
 
 The experiment uses the steady-state D2 boundary in
@@ -156,12 +160,12 @@ UNARY ×24  VoiceChat-specific SiLU lead
 one-layer stateful graph representation     PASS
 24-layer CPU graph representation           PASS
 CPU graph parity                            PASS against direct NumPy oracle
-ggml-runtime parity                         NOT YET TESTED
+ggml-runtime parity                         superseded by S5: FAIL
 XDNA compiler compatibility                 NOT TESTED
-XDNA execution/latency/state placement      BLOCKED by current namespace
+XDNA execution/latency/state placement      NOT TESTED
 ```
 
 No XDNA compiler has rejected the VoiceChat graph. The next exact experiment
-is a host-shell VitisAI/XDNA session-creation and one-step run using the
-steady-state layer graph first, then the external-data 24-layer graph if the
-provider accepts the layer.
+is exporter attribution/repair at the layer-0 first-macaron-FFN boundary, then
+the same ggml parity gate. VitisAI/XDNA session creation is deferred until
+that semantic gate passes.

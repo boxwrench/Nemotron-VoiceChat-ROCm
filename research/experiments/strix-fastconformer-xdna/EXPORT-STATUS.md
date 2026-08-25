@@ -5,14 +5,16 @@
 ```text
 EXPORT TOOLING                 AVAILABLE WIP; local environment provisioned
 STATEFUL CPU GRAPH             PASS for one layer and all 24 layers
-XDNA COMPILER COMPATIBILITY    NOT TESTED; current namespace has no VitisAI EP
+GGML ↔ ONNX AUTHORITATIVE PARITY FAIL at layer-0 first macaron FFN
+XDNA COMPILER COMPATIBILITY    NOT TESTED; parity stops compiler handoff
 PRODUCTION XDNA PERCEPTION     DEFERRED; feasibility only, no integration
 ```
 
-The local exporter and generated graphs are preserved as preparation. They are
-not evidence of XDNA compiler compatibility and do not select a production
-prefix, cache, or invocation shape. The D2 contract must be imported before a
-production-shaped graph is frozen.
+The local exporter and generated graphs are preserved as preparation. The
+source-level NumPy result is not sufficient evidence of runtime fidelity or
+XDNA compiler compatibility. The D2 contract has been imported for a
+steady-state feasibility graph, but the exporter must now be reconciled with
+the authoritative ggml stream boundary before any compiler handoff.
 
 The earlier setup result below is retained as experiment history, not as the
 current strategic blocker.
