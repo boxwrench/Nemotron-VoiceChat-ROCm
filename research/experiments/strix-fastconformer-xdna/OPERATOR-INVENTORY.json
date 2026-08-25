@@ -1,0 +1,232 @@
+{
+  "schema": "strix-fastconformer-operator-inventory-v1",
+  "runtime_source": {
+    "checkout": "build/llama-voicechat.cpp",
+    "commit": "38a76719e2b31a4dfc574bf750bb9ad44c434b81",
+    "graph": "tools/mtmd/models/voicechat.cpp",
+    "converter": "tools/voicechat/convert_voicechat_perception_to_mmproj.py"
+  },
+  "shape_symbols": {
+    "T": "input mel-frame prefix; dynamic until D2",
+    "N": "floor(floor(floor(T/2)+1)/2)+1)/2)+1, VoiceChat causal subsampler output frames",
+    "F": "17 frequency bins after three causal stride-2 stages",
+    "D": "1024 model width",
+    "H": "8 attention heads",
+    "Dh": "128 head width",
+    "W": "2*N-1 relative-position window",
+    "FF": "4096 feed-forward width"
+  },
+  "notes": [
+    "Counts are logical graph counts after loop expansion unless source_call_sites is specified.",
+    "The ggml graph is built from GGUF weights; this inventory is a compiler-facing semantic inventory, not an ONNX export.",
+    "The known gfx1151 UNARY x24 observation maps to the explicit per-layer convolution-module SiLU sites, not to the attention mask."
+  ],
+  "operators": [
+    {
+      "class": "Conv",
+      "variant": "standard Conv2D",
+      "logical_count": 3,
+      "source_call_sites": 2,
+      "locations": ["pre_conv_0", "pre_conv_3", "pre_conv_6"],
+      "input_output_shapes": ["[1,C_in,F_in,T_in] -> [1,C_out,F_out,T_out]", "pointwise k=1 for pre_conv_3/pre_conv_6"],
+      "dynamic_dimensions": ["T", "N"],
+      "amd_parakeet_equivalent": "Conformer subsampling Conv2D and pointwise projections",
+      "amd_transformation": "static-shape conversion; depthwise Pad->Conv transform does not directly target these standard Conv nodes",
+      "expected_xdna_support_risk": "medium"
+    },
+    {
+      "class": "Conv",
+      "variant": "depthwise Conv2D",
+      "logical_count": 26,
+      "source_call_sites": 2,
+      "locations": ["pre_conv_2", "pre_conv_5", "enc_%d_conv_dw for il=0..23"],
+      "input_output_shapes": ["pre-encode: [1,256,65,T1] -> [1,256,33,T2]", "encoder: [1,1024,1,N] -> [1,1024,1,N]"],
+      "dynamic_dimensions": ["T", "N"],
+      "amd_parakeet_equivalent": "depthwise subsampling and 24 depthwise Conformer module convolutions",
+      "amd_transformation": "Pad->Conv folding for depthwise pairs; causal padding semantics require adaptation",
+      "expected_xdna_support_risk": "high; existing gfx1151 CONV_2D_DW fallback is a RELATED_PATTERN"
+    },
+    {
+      "class": "Pad",
+      "variant": "causal pre-encode Pad",
+      "logical_count": 3,
+      "source_call_sites": 1,
+      "locations": ["before pre_conv_0, pre_conv_2, pre_conv_5"],
+      "input_output_shapes": ["[freq,time,channel] -> [freq+3,time+3,channel]"],
+      "dynamic_dimensions": ["T", "N"],
+      "amd_parakeet_equivalent": "24 encoder depthwise Pad->Conv pairs plus subsampling padding",
+      "amd_transformation": "fold into Conv pads when legal",
+      "expected_xdna_support_risk": "high; asymmetric causal pads must be preserved"
+    },
+    {
+      "class": "Pad",
+      "variant": "causal encoder and relative-shift padding",
+      "logical_count": 48,
+      "source_call_sites": 2,
+      "locations": ["24 causal convolution pads", "24 relative-position rel_shift pads"],
+      "input_output_shapes": ["encoder conv: [N,D] time axis receives 8 left zeros", "rel_shift: [W,N,H] padded by one slot"],
+      "dynamic_dimensions": ["N", "W"],
+      "amd_parakeet_equivalent": "depthwise Pad->Conv and relative-position graph Pad nodes",
+      "amd_transformation": "depthwise Pad->Conv folding; attention Pad may remain inside a fused partition",
+      "expected_xdna_support_risk": "high"
+    },
+    {
+      "class": "LayerNorm",
+      "variant": "ggml_norm plus affine weight/bias",
+      "logical_count": 120,
+      "source_call_sites": 5,
+      "locations": ["5 normalization sites per layer, 24 layers"],
+      "input_output_shapes": ["[D,N] -> [D,N]"],
+      "dynamic_dimensions": ["N"],
+      "amd_parakeet_equivalent": "Conformer LayerNorm; VoiceChat convolution norm is explicitly LayerNorm",
+      "amd_transformation": "no directly identified AMD rewrite",
+      "expected_xdna_support_risk": "medium-high; channel-axis conv norm needs exact export semantics"
+    },
+    {
+      "class": "Activation",
+      "variant": "SiLU",
+      "logical_count": 72,
+      "source_call_sites": 1,
+      "locations": ["24 explicit convolution-module SiLU sites", "48 FFN_SILU helper sites"],
+      "input_output_shapes": ["[D,N] -> [D,N]", "[FF,N] -> [FF,N] for FFN sites"],
+      "dynamic_dimensions": ["N"],
+      "amd_parakeet_equivalent": "Conformer nonlinearities; not the documented AMD boolean attention-mask rewrite",
+      "amd_transformation": "VAIML config in current AMD reference uses ops-blocklist=SiLUBf16; exact VoiceChat lowering is unresolved",
+      "expected_xdna_support_risk": "high; the observed gfx1151 UNARY x24 maps to the 24 convolution-module sites"
+    },
+    {
+      "class": "Activation",
+      "variant": "ReLU / sigmoid",
+      "logical_count": 27,
+      "source_call_sites": 2,
+      "locations": ["3 pre-encode ReLU sites", "24 convolution-module GLU sigmoid sites"],
+      "input_output_shapes": ["pre-encode tensors", "[D,N] -> [D,N] gate"],
+      "dynamic_dimensions": ["T", "N"],
+      "amd_parakeet_equivalent": "Conformer subsampling activation and GLU gate",
+      "amd_transformation": "none identified",
+      "expected_xdna_support_risk": "medium"
+    },
+    {
+      "class": "MatMul",
+      "variant": "weight projections",
+      "logical_count": 266,
+      "source_call_sites": 3,
+      "locations": ["11 build_mm projections per layer x24", "pre_encode.out", "final 1024->4480 projection"],
+      "input_output_shapes": ["[in_width,N] -> [out_width,N]"],
+      "dynamic_dimensions": ["N"],
+      "amd_parakeet_equivalent": "Conformer linear projections",
+      "amd_transformation": "static-shape/layout conversion",
+      "expected_xdna_support_risk": "medium"
+    },
+    {
+      "class": "MatMul",
+      "variant": "attention score and value products",
+      "logical_count": 72,
+      "source_call_sites": 3,
+      "locations": ["content scores, relative-position scores, value aggregation per layer"],
+      "input_output_shapes": ["content/relative scores semantic shape [N,N,H]", "value aggregation returns [D,N]"],
+      "dynamic_dimensions": ["N", "W"],
+      "amd_parakeet_equivalent": "relative-position multi-head attention",
+      "amd_transformation": "attention-mask rewrite applies only if export creates AMD's BOOL Slice/Where pattern",
+      "expected_xdna_support_risk": "high"
+    },
+    {
+      "class": "Attention",
+      "variant": "chunked-limited relative self-attention",
+      "logical_count": 24,
+      "source_call_sites": 1,
+      "locations": ["one block per encoder layer"],
+      "input_output_shapes": ["Q/K/V [Dh,H,N]", "scores/probs [N,N,H]", "mask [N,N]"],
+      "dynamic_dimensions": ["N", "W"],
+      "amd_parakeet_equivalent": "Parakeet relative-position attention",
+      "amd_transformation": "current AMD reference rewrites BOOL mask Slice/Where; VoiceChat supplies F32 mask input directly",
+      "expected_xdna_support_risk": "high; exact causal/chunked representation must be preserved"
+    },
+    {
+      "class": "Mask",
+      "variant": "external causal F32 mask",
+      "logical_count": 1,
+      "source_call_sites": 1,
+      "locations": ["attn_mask input; added once per layer"],
+      "input_output_shapes": ["[N,N] with 0 for 70-frame causal history and -1e30 elsewhere"],
+      "dynamic_dimensions": ["N"],
+      "amd_parakeet_equivalent": "attention mask input/path",
+      "amd_transformation": "avoid introducing BOOL Slice/Where; if exporter does, use AMD numeric rewrite only after semantic validation",
+      "expected_xdna_support_risk": "medium-high"
+    },
+    {
+      "class": "Reshape",
+      "variant": "layout and attention reshapes",
+      "logical_count": 124,
+      "source_call_sites": 9,
+      "locations": ["pre-encode flatten", "Q/K/V and position head splits", "relative-position shift"],
+      "input_output_shapes": ["[4352,N]", "[D,N] <-> [Dh,H,N]", "[W,N,H]"],
+      "dynamic_dimensions": ["T", "N", "W"],
+      "amd_parakeet_equivalent": "ONNX export reshape/transposes",
+      "amd_transformation": "static-shape conversion and layout normalization",
+      "expected_xdna_support_risk": "medium-high"
+    },
+    {
+      "class": "Transpose",
+      "variant": "feature/head/time layout transforms",
+      "logical_count": 170,
+      "source_call_sites": 7,
+      "locations": ["input, pre-encode permute, per-layer Q/K/V/position/value/conv layouts"],
+      "input_output_shapes": ["ggml layout-specific; semantic tensors listed above"],
+      "dynamic_dimensions": ["T", "N", "W"],
+      "amd_parakeet_equivalent": "ONNX layout conversion",
+      "amd_transformation": "static-shape/layout preparation; avoid unnecessary copies",
+      "expected_xdna_support_risk": "medium"
+    },
+    {
+      "class": "SliceOrView",
+      "variant": "GLU split and relative-shift views",
+      "logical_count": 96,
+      "source_call_sites": 4,
+      "locations": ["2 GLU views per layer", "2 relative-shift views per layer"],
+      "input_output_shapes": ["[2048,N] -> two [1024,N] views", "relative scores -> [N,N,H] views"],
+      "dynamic_dimensions": ["N", "W"],
+      "amd_parakeet_equivalent": "Slice/reshape/view patterns in attention and conv modules",
+      "amd_transformation": "avoid BOOL Slice/Where mask pattern; preserve numeric tensor views",
+      "expected_xdna_support_risk": "medium-high"
+    },
+    {
+      "class": "Concat",
+      "variant": "relative position sin/cos assembly",
+      "logical_count": 1,
+      "source_call_sites": 1,
+      "locations": ["pos_emb construction"],
+      "input_output_shapes": ["two [D/2,W] tensors -> [D,W]"],
+      "dynamic_dimensions": ["W"],
+      "amd_parakeet_equivalent": "relative position embedding assembly",
+      "amd_transformation": "static-shape constant/layout handling",
+      "expected_xdna_support_risk": "medium"
+    },
+    {
+      "class": "Slice",
+      "variant": "explicit ONNX Slice op in VoiceChat ggml source",
+      "logical_count": 0,
+      "source_call_sites": 0,
+      "locations": [],
+      "input_output_shapes": [],
+      "dynamic_dimensions": [],
+      "amd_parakeet_equivalent": "AMD's attention-mask rewrite targets BOOL Slice/Where nodes in its exported graph",
+      "amd_transformation": "not directly applicable to the current ggml mask construction",
+      "expected_xdna_support_risk": "unknown until an ONNX export exists"
+    }
+  ],
+  "known_fallback_mapping": {
+    "CONV_2D_DW": {
+      "classification": "RELATED_PATTERN",
+      "locations": ["pre_conv_2", "pre_conv_5", "enc_%d_conv_dw"],
+      "amd_relation": "related to AMD Parakeet Pad->depthwise-Conv compiler work",
+      "not_proven": "exact exported compiler input equivalence"
+    },
+    "UNARY_x24": {
+      "classification": "VoiceChat-specific SiLU lead",
+      "locations": ["one per encoder layer after conv_norm"],
+      "amd_relation": "not AMD's boolean attention-mask issue",
+      "not_proven": "XDNA support or replacement lowering"
+    }
+  }
+}
