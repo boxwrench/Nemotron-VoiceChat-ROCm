@@ -8,9 +8,21 @@ by pinned commit -- never by a floating branch tip.
 Repository:          boxwrench/llama-voicechat.cpp
 Upstream chain:       ggml-org/llama.cpp -> sansamour/llama-voicechat.cpp -> boxwrench/llama-voicechat.cpp
 Integration branch:   amd/rocm
-Pinned known-good:    38a76719e2b31a4dfc574bf750bb9ad44c434b81
-                      "voicechat: support Q8_0 component conversion"
+Pinned known-good:    a05335bb37b4819e6802efe831cbbee3e584f50b
+                      "voicechat: run function head on GPU"
 ```
+
+Advanced from the prior pin (`38a76719e`, "voicechat: support Q8_0 component
+conversion") after the M4 duplex-feasibility investigation validated a GPU
+function-head projection (`VC_FHEAD_GPU=1`, CPU path preserved as the
+unconditional default/fallback): 909/909 exact token match against the CPU
+reference and byte-identical regression behavior across the corpus, ~9.7ms/
+frame recovered. The only commit between the two pins that changes runtime
+code is this one (`git log 38a76719e..a05335bb3 --oneline`); the other
+intervening commit (`5cc03186a`) is research/baseline evidence only, no
+runtime-code change. See
+[research/experiments/m4b-streaming-audio/README.md](../research/experiments/m4b-streaming-audio/README.md)
+and `docs/M4-DUPLEX-DESIGN.md` for the full investigation this pin came out of.
 
 ## Integration branch vs. pinned commit
 

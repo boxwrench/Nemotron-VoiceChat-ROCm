@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import csv
 import json
 import math
@@ -25,9 +26,25 @@ def percentile(values: list[float], fraction: float) -> float:
 
 
 def main() -> None:
-    repo = Path(__file__).resolve().parents[3]
-    baseline = repo / "research/amd-voicechat/baselines/R9700-Q8-M1"
-    generated = baseline / "generated"
+    repo_default = Path(__file__).resolve().parents[3]
+    ap = argparse.ArgumentParser(description="Summarize R9700 Q8 VoiceChat benchmark runs")
+    ap.add_argument("--repo", type=Path, default=repo_default)
+    ap.add_argument("--baseline-dir", type=Path, default=None,
+                     help="default: <repo>/research/baselines/R9700-Q8-M1")
+    ap.add_argument("--generated-dir", type=Path, default=None,
+                     help="default: <baseline-dir>/generated")
+    ap.add_argument("--output-dir", type=Path, default=None,
+                     help="where to write raw-runs.csv/summary.csv; "
+                          "default: <baseline-dir> itself (matches the frozen "
+                          "evidence's own filenames -- pass a different "
+                          "directory to avoid overwriting frozen baseline "
+                          "evidence with a live re-run)")
+    args = ap.parse_args()
+
+    baseline = args.baseline_dir or (args.repo / "research/baselines/R9700-Q8-M1")
+    generated = args.generated_dir or (baseline / "generated")
+    output_dir = args.output_dir or baseline
+    output_dir.mkdir(parents=True, exist_ok=True)
     all_rows = []
     summaries = []
 
@@ -60,16 +77,18 @@ def main() -> None:
             })
 
     fields = list(all_rows[0])
-    with (baseline / "raw-runs.csv").open("w", newline="", encoding="utf-8") as dst:
+    with (output_dir / "raw-runs.csv").open("w", newline="", encoding="utf-8") as dst:
         writer = csv.DictWriter(dst, fieldnames=fields)
         writer.writeheader()
         writer.writerows(all_rows)
 
     fields = list(summaries[0])
-    with (baseline / "summary.csv").open("w", newline="", encoding="utf-8") as dst:
+    with (output_dir / "summary.csv").open("w", newline="", encoding="utf-8") as dst:
         writer = csv.DictWriter(dst, fieldnames=fields)
         writer.writeheader()
         writer.writerows(summaries)
+
+    print(f"summarize_r9700_q8.py: wrote {output_dir / 'raw-runs.csv'} and {output_dir / 'summary.csv'}")
 
 
 if __name__ == "__main__":
