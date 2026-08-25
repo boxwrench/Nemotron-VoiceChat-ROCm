@@ -1,31 +1,62 @@
 # M4 design: native continuous duplex VoiceChat
 
-Status: design only. No runtime or client code has changed as a result of
-this document. It exists to scope M4 before any implementation branch is
-opened.
+Status: **M4 closed.** Design and feasibility work (M4-0, M4A, M4P, M4B)
+ran to completion; the fork this document's M4-0A/M4-0B tradeoffs pointed
+toward has resolved to **ship PTT v0.1 first, continue duplex
+afterward.** No runtime or client production code changed as a result of
+this milestone -- every finding below came from source reading,
+measurement scripts, and uncommitted/throwaway runtime instrumentation on
+research branches, none of it merged. See "M4 closed: summary and
+disposition" near the bottom for the full closing classification and
+what carries forward.
+
+## M4 journey (top-level summary)
+
+```
+M4A   perception investigated; bounded-history problem characterized
+M4P   real bottlenecks decomposed
+M4P-3 GPU function head promoted
+M4B   PCM streaming proven; synchronous scheduling unsuitable
+```
 
 Reviewed once; accepted directionally with three corrections applied
 below (assistant-overlap vs. user-interruption are distinct phenomena,
 a live-timeline causality invariant, and playback cancellation separated
 from internal TTS/model-state cancellation). The M4-0 feasibility spike
-(see bottom) has since run, from source reading alone, no experiment
-needed: M4-0B (chunked audio decode) is RESOLVED -- not a blocker.
-M4-0A (streaming perception encode) is BLOCKER CHARACTERIZED -- exact
+(see bottom) ran from source reading alone, no experiment needed:
+M4-0B (chunked audio decode) is RESOLVED -- not a blocker. M4-0A
+(streaming perception encode) is BLOCKER CHARACTERIZED -- exact
 online-equivalent embeddings are not achievable at all given this
 encoder's bidirectional attention, so the open work was choosing among a
 characterized set of tradeoffs (fixed lookahead / bounded sliding
 context / causal encoder change / replay), not closing a gap with more
 compute.
 
-**M4A-1 has since resolved that choice empirically: PROMOTE
-zero-lookahead.** Across an initial sweep and an adversarial follow-up
-targeting speech onset, mid-word, pre/post-pause, silence, and noisy
-regions, future-audio context produced no material change to perception
-embeddings relative to natural frame-to-frame variation. See
+**M4A-1 resolved that choice empirically: PROMOTE zero-lookahead.**
+Across an initial sweep and an adversarial follow-up targeting speech
+onset, mid-word, pre/post-pause, silence, and noisy regions, future-audio
+context produced no material change to perception embeddings relative to
+natural frame-to-frame variation. See
 `research/experiments/m4a-1-lookahead-spike/README.md` for the full
-methodology and results; summary under M4-0A below. M4A-2 (measuring
-whether the resulting naive growing-prefix re-encode stays inside the
-80ms causal budget) is next, not yet started.
+methodology and results; summary under M4-0A below.
+
+**M4A-2/M4A-3 then found the real cost isn't in future context at all.**
+M4A-2 measured that a naive growing-prefix re-encode (the only strategy
+zero-lookahead leaves available, since there's no encoder-side state)
+crosses the 80ms causal budget between 20-24s of accumulated audio,
+~3.2ms/s marginal cost above an ~11-12ms floor -- classified
+needs-bounded-window, not encoder surgery. M4A-3 then searched for a
+bounded left-context window that would fit both the timing budget and
+preserve downstream correctness, and found none: no window tested had
+both adequate timing margin and reliable fidelity (numeric embedding
+similarity did not reliably predict downstream correctness -- a 1s
+window produced total failure while a 2s window succeeded despite lower
+cosine similarity). M4A closed as **ESCALATE -- real-time critical
+path**, and critically, M4A-3's Part 1 found the non-perception per-frame
+cost (llama_decode + sampling + TTS feed) was already 57.9ms mean/63.6ms
+p95 on its own -- perception was competing for a budget that was already
+nearly consumed by something else entirely. That redirected the
+investigation to M4P.
 
 ## Why this milestone, and why now
 
@@ -49,9 +80,11 @@ decides when to speak.
 
 M4's target, stated plainly: **a continuous, low-latency spoken
 conversation -- always listening, speaking incrementally, naturally
-taking turns, and interruptible while it talks.** PTT is now frozen as a
-diagnostic/fallback interface (see its README's "Known limitations"); it
-is not extended further as part of reaching this goal.
+taking turns, and interruptible while it talks.** PTT was frozen as a
+diagnostic/fallback interface while M4 was pursued in parallel; M4 has
+since closed (see "M4 closed" below) without shipping duplex, and PTT is
+the actual v0.1 release interface as a result -- not a placeholder, the
+real deliverable.
 
 ## What the runtime does today (read from source, not assumed)
 
@@ -418,7 +451,12 @@ classification:      PROMOTE zero-lookahead
 frame's own arrival -- it does not mean zero latency; the current 80ms
 of audio still has to arrive and the prefix seen so far still has to be
 encoded. What that encode costs, and whether it stays inside the 80ms
-causal budget as conversation length grows, is M4A-2, not yet started.
+causal budget as conversation length grows, was M4A-2/M4A-3 (see the M4
+journey summary above and "M4 closed" below) -- closed ESCALATE, not
+because zero-lookahead was wrong, but because no bounded re-encode
+window was found that held both timing margin and downstream fidelity,
+and because non-perception frame cost turned out to dominate the budget
+regardless.
 
 ### M4-0B feasibility: RESOLVED
 
@@ -438,46 +476,149 @@ the mic back in introduces acoustic echo -- a separate problem from
 whether the native duplex model works at all, and one to defer to later
 productization (AEC), not solve while still validating the core premise.
 
-## Sequencing (bounded steps, not started by this document)
+## Sequencing (as actually run -- see "M4 closed" below for the full record)
 
 - **M4A -- continuous input.**
   - **M4A-1 (done)** resolved the context-vs-equivalence choice
     empirically: PROMOTE zero-lookahead (see M4-0A above and
     `research/experiments/m4a-1-lookahead-spike/`). No future audio
     context is required for a usably-close perception embedding.
-  - **M4A-2 (next, not started)**: zero-lookahead still means the
-    growing prefix seen so far must be re-encoded on every new frame
-    (no encoder-side state exists). Measure whether that naive
-    re-encode's cost stays inside the 80ms causal budget (see "The
-    live-timeline causality invariant" above) as conversation length
-    grows -- a systems/performance question now, not an open
-    architectural one.
-  - Only once M4A-2 establishes a viable encode strategy does feeding
-    VoiceChat continuously at its native cadence with no artificial
-    turn boundary become meaningful to build. Headphones required for
-    the first live test.
+  - **M4A-2 (done)**: measured the naive growing-prefix re-encode's cost
+    against the 80ms causal budget -- crosses it between 20-24s of
+    accumulated audio, ~3.2ms/s marginal cost. Classified
+    needs-bounded-window, not encoder surgery.
+  - **M4A-3 (done)**: searched for a bounded left-context window with
+    both timing margin and reliable downstream fidelity. None found;
+    numeric embedding similarity did not reliably predict correctness.
+    Also found non-perception per-frame cost (57.9ms mean) was already
+    consuming nearly the entire 80ms budget on its own. **M4A closed:
+    ESCALATE -- real-time critical path**, redirecting to M4P.
+- **M4P -- frame critical-path decomposition** (opened in place of
+  further M4A work, since the dominant cost turned out not to be
+  perception). Matched-control decomposition (A: full VoiceChat+TTS: B:
+  TTS disabled; C: isolated TTS from a replayed token stream) of the
+  ~58ms non-perception frame cost.
+  - **M4P-1 (done)**: main path 29.66ms / TTS path 28.34ms of the frame;
+    confirmed TTS is a clean one-way boundary (nothing feeds back into
+    the main decoder); found the ~17ms "text sampling" bucket was
+    suspiciously large relative to `llama_decode` itself (1.53ms);
+    found a reproducible multi-GPU segfault whenever more than one ROCm
+    device is visible to the process (open, undebugged, carried
+    forward as a named lead).
+  - **M4P-2 (done)**: confirmed via matched forced-sync controls and
+    source (`common_sampler_sample()` opens with `llama_synchronize()`)
+    that the ~17ms bucket is genuine deferred GPU decode latency, not
+    recoverable. Confirmed the function-head's ~10.8ms is genuinely
+    separate CPU work, memory-bandwidth-bound (595MiB Q8_0 weight,
+    ~65.7GB/s achieved). Ranked function-head GPU placement as the
+    highest-payoff single-GPU lead -- non-speculative, upper-bounded
+    (~12.2ms/frame), clean mechanism.
+  - **M4P-3 (done, PROMOTED, committed):** built a GPU function-head
+    implementation (`ggml_mul_mat` + `ggml_argmax`, device-resident
+    weight, one token id read back) on `perf/m4-function-head-gpu`
+    (`boxwrench/llama-voicechat.cpp`, commit `a05335bb3`, based on
+    `amd/rocm` @ `5cc03186a`). Verified 909/909 exact token match against
+    the CPU reference and byte-identical regression behavior. Recovered
+    ~9.7ms/frame main-path (~11.5ms/frame full-frame), close to the
+    theoretical ceiling. **This is the one M4 change that is committed
+    and pushed as a real release-candidate option** (see "M4 closed"
+    below) -- not merged into `amd/rocm`.
 - **M4B -- incremental output.** Replace "wait for a complete WAV" with
-  streaming playback as TTS frames decode. The metric that matters
-  changes from complete speech-to-speech time (the R9700 baseline's 4.244s
-  mean) to time from user-stops-speaking to first audible assistant
-  speech.
-- **M4C -- simultaneous input and output.** Microphone and speaker both
-  live at once, no pausing capture while VoiceChat talks.
-- **M4D -- barge-in.** The real test: interrupt VoiceChat mid-response and
-  have it react correctly, without a push-to-talk button, without an
-  artificial "you may speak now," and without resetting the conversation.
+  streaming playback as TTS frames decode.
+  - **M4B-1 (done)**: wired the existing causal `codec_decode()` and the
+    existing unused `mtmd_audio_streaming_istft` together. Streaming PCM
+    correctness PASS (correlation 0.9999999-1.0 vs. the reference
+    decode, no drift, no boundary discontinuities, deterministic).
+    Aggregate codec throughput PASS (2.8-3.9x realtime at chunk=8). But
+    synchronous per-call latency FAIL: 164-232ms per call at the
+    best-amortized chunk size, 2-3x the 80ms budget, confirmed
+    elongating a real turn by +685ms when injected synchronously.
+  - **M4B-2 (done)**: tested whether the per-call cost was dominated by
+    graph-build/allocation overhead (fixable cheaply by building the
+    codec graph once and reusing it). Measured directly: build/alloc
+    overhead is under 200us out of a 55-96ms call. Root cause is
+    genuine GPU kernel dispatch/execution cost across the codec's
+    593-node steady-state graph. A live reuse prototype confirmed ~0ms
+    recovered. **Graph-reuse lead KILL.**
+  - See `research/experiments/m4b-streaming-audio/README.md` for the
+    full M4B-1/M4B-2 methodology, data, and reproduction instructions.
+- **M4C -- simultaneous input and output.** Not started. The retained
+  leads from M4B-2 (background/async codec worker, or reducing the
+  codec graph's node count) are its likely entry points, deferred to
+  post-v0.1.
+- **M4D -- barge-in.** Not started, deferred with M4C.
+
+## M4 closed: summary and disposition
+
+```
+M4A   perception investigated; bounded-history problem characterized
+M4P   real bottlenecks decomposed
+M4P-3 GPU function head promoted
+M4B   PCM streaming proven; synchronous scheduling unsuitable
+```
+
+Final classification:
+
+```
+M4A   perception context      RESOLVED (zero-lookahead) then ESCALATE
+                               (no bounded window has both margin and
+                               fidelity; non-perception cost dominates)
+M4P   frame critical path     DECOMPOSED; function-head PROMOTED,
+                               main-decode sync confirmed unrecoverable,
+                               native TTS retained as the next large
+                               target, multi-GPU crash open/undebugged
+M4B   incremental audio       PCM correctness PASS, throughput PASS,
+                               synchronous integration FAIL,
+                               graph-reuse KILL
+```
+
+Fork taken: **ship PTT v0.1 first, continue duplex afterward.** M4B-2's
+graph-reuse test was explicitly the last cheap test before this decision
+point; what remains to close the gap (an async/background codec worker,
+or codec graph node-count reduction) is real runtime engineering, not a
+quick fix, and belongs after a usable release is in people's hands, not
+before it.
+
+M4 paid for itself independent of whether duplex ships next: it produced
+a real, verified, committed performance win (the GPU function-head
+promotion), proved incremental audio generation is numerically sound,
+identified the actual remaining bottleneck precisely (codec dispatch
+structure, not codec capability), and closed off several plausible-looking
+but wrong explanations (graph-rebuild overhead, perception future-context
+cost) before any implementation investment went into them.
+
+What carries forward, retained as named leads for after v0.1:
+
+- **Background/async codec worker** -- the natural M4C-shaped answer to
+  M4B-2's synchronous-latency finding.
+- **Depthwise-conv graph node-count reduction** -- the codec's 593-node
+  steady-state graph comes from expanding each depthwise conv as a sum
+  of `kk` shifted-view multiplies rather than a single fused op;
+  unexplored, possibly cheaper than async.
+- **External/replacement TTS** -- native TTS is architecturally the
+  largest remaining single-GPU budget item (M4P-1/M4P-2), with a clean,
+  confirmed replaceable-renderer boundary (nothing feeds back into main
+  state), but out of scope for now per standing instruction.
+- **Multi-GPU** -- blocked entirely by a reproducible segfault whenever
+  more than one ROCm device is visible to the process (found in M4P-1),
+  undebugged, carried forward untouched.
 
 ## Explicitly out of scope for this document
 
-- No runtime or client code changes.
-- No merge decision on `feature/push-to-talk` -- left pushed and
-  unmerged, unaffected by this document.
-- No implementation of M4-0A's sliding-window re-encode strategy or
-  M4-0B's ISTFT streaming integration -- both are now scoped, neither is
-  built.
-- No live-microphone testing was part of M4-0 -- both findings came from
-  source reading, no experiment was even needed.
-- No benchmarking, no kernel/graph tuning.
+- No runtime or client production code changes -- every M4 finding came
+  from source reading, measurement, and uncommitted research-branch
+  instrumentation. The one exception, the GPU function-head change,
+  committed on `perf/m4-function-head-gpu` (`a05335bb3`), was promoted
+  to the v0.1 release's runtime pin (see `runtime/README.md`) -- it is
+  still not merged into `amd/rocm`; v0.1 pins the commit directly.
+- No merge decision on `feature/push-to-talk` was made by M4 itself --
+  that reconciliation is part of the separate v0.1 release-prep work
+  this closure hands off to.
+- No live-microphone testing was part of M4-0 or any subsequent M4
+  milestone -- every finding came from file-driven/replayed input, per
+  the headphones-required constraint below, which was never triggered
+  because live-mic testing never started.
+- No M4C/M4D implementation.
 
 ## Revised scoreboard
 
