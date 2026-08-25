@@ -59,7 +59,7 @@ streaming frontend. The full-prefix graph remains an oracle for diagnostics:
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | VC01-short | 38 | 8,257,536 | 0.999862075 | 0.000716533 | 0.00263504 | exact token/function rows |
 | VC03-long | 281 | 14,548,992 | 0.999477744 | 0.0014307 | 0.00563987 | semantic; token rows diverge |
-| VC05-pause | 101 | 14,548,992 | 0.999720812 | 0.000905603 | 0.00348644 | exact token/function rows |
+| VC05-pause | 101 | 14,548,992 | 0.999654591 | 0.00101189 | 0.00375581 | exact token/function rows |
 
 VC01, VC04, VC05, and VC06 retain exact token/function traces. VC02 and VC03
 retain semantic response behavior but their small bounded-encoder numerical

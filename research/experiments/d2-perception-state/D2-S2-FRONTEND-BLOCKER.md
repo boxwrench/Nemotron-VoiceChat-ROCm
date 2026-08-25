@@ -105,8 +105,11 @@ stage 3: output k uses stage-2   [2k-2, 2k]
 The current implementation uses a 33-row aligned bounded graph probe for
 the three subsampling stages. It is deliberately not presented as the final
 minimal stage-cache implementation or production static shape. Its
-pre-encoder output matched the full-prefix oracle exactly on VC01–VC06 and
-the onset/silence controls. The probe consumes the streaming PCM frontend;
+pre-encoder output passed the cosine/first-bad-frame gate on VC01–VC06 and
+the onset/silence controls. VC01–VC04 and VC06 were numerically exact; VC05
+has a tail envelope of RMSE 0.0317651 and max absolute difference 0.101608
+while retaining cosine 1.0 and the exact downstream token/function trace. The
+probe consumes the streaming PCM frontend;
 the full-prefix tensors are retained only for parity diagnostics.
 
 ## Downstream fidelity

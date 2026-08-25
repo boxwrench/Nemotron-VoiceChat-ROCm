@@ -131,8 +131,10 @@ The first state decomposition is:
 
 The first four rows are now split by evidence. The encoder attention,
 convolution, residual, normalization, and projection rows are implemented and
-validated in D2-S1. The waveform/mel and causal-subsampling rows remain the
-production completion work.
+validated in D2-S1. D2-S2 now has exact PCM→mel parity and a bounded
+preencoder parity gate; the VC05 end tail retains a documented numerical
+envelope. The minimal persistent stage-cache implementation and reference
+host qualification remain open.
 
 Important consequences:
 
@@ -147,21 +149,21 @@ Important consequences:
 
 ## D2-S1 parity and downstream fidelity
 
-The bounded encoder stack was driven by the exact full-prefix `pre_enc_out`
-frames and compared with the full-prefix 4480-wide embeddings. Diagnostic
-floating-point drift accumulates slowly, but downstream behavior remained
-exact in the saved token/function traces:
+The bounded encoder stack was driven by the streaming frontend's
+`pre_enc_out` frames and compared with the full-prefix 4480-wide embeddings.
+Diagnostic floating-point drift accumulates slowly. The complete fixture
+result is:
 
 | Fixture | Frames | Minimum cosine | Max RMSE | Max abs | Downstream result |
 | --- | ---: | ---: | ---: | ---: | --- |
 | VC01 short | 38 | 0.999862075 | 0.000716533 | 0.00263504 | exact token/function trace |
-| VC03 long | 281 | 0.999477744 | 0.0014307 | 0.00563987 | exact token/function trace |
-| VC05 pause | 101 | 0.999720812 | 0.000905603 | 0.00348644 | exact token/function trace |
+| VC03 long | 281 | 0.999477744 | 0.0014307 | 0.00563987 | semantic; token rows diverge |
+| VC05 pause | 101 | 0.999654591 | 0.00101189 | 0.00375581 | exact token/function trace |
 
-The VC03 trace contains 291 downstream dump rows and VC05 contains 159; both
-matched their full-prefix controls exactly. VC01's final text was
-`</s><s>The capital of France is Paris.` in both paths. These are stronger
-acceptance evidence than embedding cosine alone.
+VC01, VC04, VC05, and VC06 retain exact token/function traces. VC02 and VC03
+remain semantically coherent but their bounded-encoder drift crosses sampler
+boundaries. These are stronger acceptance evidence than embedding cosine
+alone, but they are a qualification rather than an exact-token PASS.
 
 On the available CPU build, the p99-instrumented samples were:
 

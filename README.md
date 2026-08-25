@@ -179,7 +179,8 @@ fidelity. D2 is a bounded-context and/or cached-encode problem, not a
 "does it need the future" problem. The first D2-S1 encoder-state prototype
 passes the bounded-state control with a 14.55 MiB plateau, and the current
 research path now reproduces the authoritative VoiceChat raw log-mel frontend
-from chunked PCM with exact mel and pre-encoder parity. The remaining D2
+from chunked PCM with exact mel parity and a bounded pre-encoder parity gate
+(with a documented VC05 tail envelope). The remaining D2
 qualification is downstream numerical drift on two long fixtures plus the
 R9700 service/deadline curve. The earlier full-session-normalization blocker
 was traced to the separate conformer preprocessor: pinned VoiceChat passes

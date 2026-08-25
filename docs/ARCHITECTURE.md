@@ -118,8 +118,9 @@ and still needs R9700/GPU-contention and real playback-device qualification.
 D2-S1 has a passing bounded-state encoder milestone, and D2-S2 now has a
 research-qualified chunked PCM frontend. The path retains per-layer attention
 K/V history and causal-convolution context, reaches a 14.55 MiB state plateau,
-and reproduces the authoritative VoiceChat raw log-mel and pre-encoder
-outputs exactly across chunk boundaries. VC01, VC04, VC05, and VC06 retain
+and reproduces the authoritative VoiceChat raw log-mel output exactly across
+chunk boundaries, with a bounded pre-encoder parity gate and a documented VC05
+tail envelope. VC01, VC04, VC05, and VC06 retain
 exact token/function traces; VC02 and VC03 remain semantically coherent but
 show bounded-encoder numerical drift that crosses sampler boundaries. The
 R9700/GPU service curve is still unavailable in the current namespace. The
