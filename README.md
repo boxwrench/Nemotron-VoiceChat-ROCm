@@ -81,12 +81,24 @@ reliable default interface; the global-hotkey Space-hold client
 (`ptt.py`) is available but has Wayland/input-permission constraints the
 terminal client doesn't.
 
-Explicitly not in v0.1: continuous duplex, barge-in, streaming PCM
-playback, multi-GPU, replacement TTS, production tool calling, non-Linux
-audio backends. These were investigated as the M4 milestone (see
-[docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md)) and found to need
-real async/runtime engineering beyond a quick addition -- that work
+Explicitly not in v0.1: continuous/live duplex, barge-in, streaming PCM
+*during* generation, multi-GPU, replacement TTS, production tool calling,
+non-Linux audio backends. These were investigated as the M4 milestone
+(see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md)) and found to
+need real async/runtime engineering beyond a quick addition -- that work
 continues after this release, not before it.
+
+Separately, an opt-in **post-turn** streaming-playback path
+(`VC_TTS_STREAM_PLAYBACK=1`, see
+[app/push-to-talk/README.md](app/push-to-talk/README.md)) is available
+for this release's human validation round: assistant text still streams
+during generation as before, and once the response text finishes, native
+speech now starts playing as soon as the first already-available audio
+is decoded, rather than waiting for the complete response WAV to render.
+This is not speech streaming *during* generation, not duplex, and not
+barge-in -- it only closes the gap between the model finishing talking
+(in text) and the user hearing it. It remains opt-in, not the default,
+until a human validation pass confirms it's ready to ship on by default.
 
 ### Known limitations
 

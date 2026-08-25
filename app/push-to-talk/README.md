@@ -61,6 +61,39 @@ stays loaded between turns; press Esc or Ctrl+C to quit.
 ALSA device (`arecord -l` / `aplay -l` list what's available); otherwise
 the ALSA default is used.
 
+### Post-turn streaming playback (opt-in, `VC_TTS_STREAM_PLAYBACK=1`)
+
+By default the reply plays only once the whole response has been
+decoded to a complete WAV file. Setting `VC_TTS_STREAM_PLAYBACK=1` in
+the runtime process's environment (i.e. before launching `ptt.py` /
+`ptt_terminal.py`, same as the `VC_BIN`/`VC_MODEL`/... variables above)
+switches to a post-turn streaming path instead: as soon as the response
+text finishes, the runtime starts playing audio as soon as the first
+already-decoded chunk is ready, and keeps decoding/playing the rest as
+it goes, rather than waiting for the full response to render first. This
+still only starts *after* the response text is complete -- it does not
+overlap with generation, and it is not duplex or barge-in.
+
+One thing is still coupled to the default (non-streaming) path and has
+not been updated for this opt-in flag yet:
+
+- audio is played by the runtime process itself via `aplay` on the
+  system's default ALSA device, so `--play-device`/`$VC_PLAY_DEVICE`
+  has no effect when this flag is set.
+
+The `playback_begin` timing `ptt.py`/`ptt_terminal.py` print reflects
+real first-audio time under this flag too: the runtime emits a
+`playback_begin` event the moment its own `aplay` pipe receives its
+first real PCM, and the client reports that event's arrival time rather
+than the old end-of-turn signal. `total` still reflects the client's
+own turn-end bookkeeping and is not the useful number here -- watch
+`playback_begin` (or judge by ear) for the actual latency this flag is
+meant to improve.
+
+This flag is being validated on real hardware before it becomes the
+default; use it for this round's live testing, but expect the one
+caveat above.
+
 ### GPU selection
 
 Neither client sets `ROCR_VISIBLE_DEVICES` -- it is never invented on your

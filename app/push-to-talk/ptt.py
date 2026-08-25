@@ -191,9 +191,10 @@ def submit_turn(session: Session, audio_in: Path, t0: float, args: argparse.Name
     text_parts: list[str] = []
     first_text_t = None
     audio_ready_t = None
+    playback_begin_t = None
 
     def on_event(event: dict) -> None:
-        nonlocal first_text_t, audio_ready_t
+        nonlocal first_text_t, audio_ready_t, playback_begin_t
         kind = event.get("kind")
         if kind == "assistant_text_delta":
             if first_text_t is None:
@@ -201,6 +202,14 @@ def submit_turn(session: Session, audio_in: Path, t0: float, args: argparse.Name
             delta = event.get("delta", "")
             text_parts.append(delta)
             print(delta, end="", flush=True)
+        elif kind == "playback_begin":
+            # M3.1 (VC_TTS_STREAM_PLAYBACK=1): the runtime's own aplay pipe
+            # just received its first real PCM -- this is genuine first-audio
+            # time, well before the "audio" event below, which under
+            # streaming playback now fires only once the runtime's pipe has
+            # finished playing the whole turn.
+            if playback_begin_t is None:
+                playback_begin_t = time.monotonic()
         elif kind == "audio":
             audio_ready_t = time.monotonic()
 
@@ -225,11 +234,18 @@ def submit_turn(session: Session, audio_in: Path, t0: float, args: argparse.Name
     def since(t):
         return f"{(t - t0) * 1000:.0f} ms" if t is not None else "n/a"
 
+    # Prefer the real playback_begin event (M3.1 streaming playback, emitted
+    # when the runtime's own aplay pipe gets its first PCM). Falls back to
+    # the legacy "audio" event (wav-ready time, immediately followed by this
+    # client's own play() call) when streaming playback isn't active --
+    # unchanged from before this fix.
+    playback_metric_t = playback_begin_t if playback_begin_t is not None else audio_ready_t
+
     print(
         "[key_release->submit "
         + f"{(submit_t - t0) * 1000:.0f} ms, "
         + "first_text " + since(first_text_t) + ", "
-        + "playback_begin " + since(audio_ready_t) + ", "
+        + "playback_begin " + since(playback_metric_t) + ", "
         + "total " + since(total_t) + "]"
     )
 
