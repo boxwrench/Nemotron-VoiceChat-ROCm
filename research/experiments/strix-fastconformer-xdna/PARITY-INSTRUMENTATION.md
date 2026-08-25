@@ -37,6 +37,23 @@ The first-FFN tensor is an explicit scratch graph output so scheduler reuse
 cannot overwrite it before capture. This adds diagnostic outputs only when the
 opt-in path is enabled and must not be committed to the runtime.
 
+The S5-P1 attribution variant additionally roots only layer 0's first-FFN
+boundaries: raw and affine LayerNorm output, `linear1`, SiLU, `linear2`, the
+0.5-scaled branch, and its residual output. `analyze_ggml_ffn_stages.py`
+compares the live Q8 capture with a direct dequantized-F32 control and CPU
+ONNX. These extra roots exist solely to locate a representation split.
+
+Two further scratch-only variables support the F32 fidelity falsification:
+
+```text
+VC_D2_PREENC_TRACE=<path>       append each [1024] D2 pre-encoder input
+VC_D2_EMBD_INJECT_PATH=<path>   replace the timeline embedding sequence only
+```
+
+The injector checks the exact `n_frames * 4480 * sizeof(float)` contract and
+does not alter model state or normal inference when absent. It must never
+become a production renderer/perception API.
+
 ## Scratch build and use
 
 From the runtime build directory, rebuild the VoiceChat binary:

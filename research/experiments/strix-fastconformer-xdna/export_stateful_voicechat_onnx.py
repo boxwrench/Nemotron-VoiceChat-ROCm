@@ -91,7 +91,8 @@ def add_ffn(nodes, initializers, source: GGUFSource, weight_prefix: str, norm_pr
     return node(nodes, "Add", [residual, half], out, f"{name}.residual")
 
 
-def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: bool = False):
+def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: bool = False,
+                dynamic_history_mask: bool = False):
     p = SRC + f"encoder.layers.{layer_index}."
     b = f"layer{layer_index}"
     nodes = []
@@ -105,10 +106,24 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
         vi("pos_freqs", [D // 2]),
         vi("rel_positions", [2 * (HIST + 1) - 1]),
     ]
+    if dynamic_history_mask:
+        inputs.append(vi("attn_mask", [1, 1, 1, HIST + 1]))
 
     cur = "pre_enc_out"
     cur = add_ffn(nodes, initializers, source, p + "feed_forward1", p + "norm_feed_forward1",
                   cur, cur, f"{b}.ffn1_residual", f"{b}.ffn1")
+    if debug_intermediates:
+        # Keep the production topology intact while asking ONNX
+        # LayerNormalization for its optional sufficient statistics.  The
+        # analysis tool reconstructs the raw normalized vector as
+        # (pre_enc_out - mean) * inv_std, then compares it with the opt-in
+        # ggml capture before the first Q8 MatMul.
+        for candidate in nodes:
+            if candidate.name == f"{b}.ffn1.norm":
+                candidate.output.extend([f"{b}.ffn1.norm_mean", f"{b}.ffn1.norm_inv_std"])
+                break
+        else:
+            raise RuntimeError("could not locate layer-0 first-FFN LayerNormalization node")
 
     # Relative Transformer-XL attention.  The steady-state query sees the
     # retained 70 keys/values followed by the new key/value.
@@ -168,8 +183,11 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
     node(nodes, "Add", [content, f"{b}.attn.rel"], f"{b}.attn.scores", f"{b}.attn.score_add")
     initializers.append(init(f"{b}.attn.scale", np.float32(1.0 / np.sqrt(DH))))
     node(nodes, "Mul", [f"{b}.attn.scores", f"{b}.attn.scale"], f"{b}.attn.scaled", f"{b}.attn.scale_node")
-    initializers.append(init(f"{b}.attn.mask", np.zeros((1, 1, 1, HIST + 1), dtype=np.float32)))
-    node(nodes, "Add", [f"{b}.attn.scaled", f"{b}.attn.mask"], f"{b}.attn.masked", f"{b}.attn.mask_add")
+    if dynamic_history_mask:
+        node(nodes, "Add", [f"{b}.attn.scaled", "attn_mask"], f"{b}.attn.masked", f"{b}.attn.mask_add")
+    else:
+        initializers.append(init(f"{b}.attn.mask", np.zeros((1, 1, 1, HIST + 1), dtype=np.float32)))
+        node(nodes, "Add", [f"{b}.attn.scaled", f"{b}.attn.mask"], f"{b}.attn.masked", f"{b}.attn.mask_add")
     node(nodes, "Softmax", [f"{b}.attn.masked"], f"{b}.attn.probs", f"{b}.attn.softmax", axis=-1)
     context = node(nodes, "MatMul", [f"{b}.attn.probs", f"{b}.attn.v_all"], f"{b}.attn.context_heads", f"{b}.attn.value_aggregation")
     node(nodes, "Transpose", [context], f"{b}.attn.context_last", f"{b}.attn.context_merge", perm=[0, 2, 1, 3])
@@ -209,9 +227,20 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
         vi("conv_new", [1, 1, D]),
     ]
     if debug_intermediates:
-        # Exposed only for ggml attribution. This is the first point before
-        # attention where the captured runtime and ONNX graph can diverge.
-        outputs.append(vi(f"{b}.ffn1_residual", [1, 1, D]))
+        # Exposed only for ggml attribution.  These are the exact first-FFN
+        # boundaries needed to distinguish a norm/layout error from Q8
+        # matrix-multiply arithmetic.  They are never part of the production
+        # graph contract.
+        outputs.extend([
+            vi(f"{b}.ffn1.norm", [1, 1, D]),
+            vi(f"{b}.ffn1.norm_mean", [1, 1, 1]),
+            vi(f"{b}.ffn1.norm_inv_std", [1, 1, 1]),
+            vi(f"{b}.ffn1.up", [1, 1, FF]),
+            vi(f"{b}.ffn1.silu", [1, 1, FF]),
+            vi(f"{b}.ffn1.down", [1, 1, D]),
+            vi(f"{b}.ffn1.half", [1, 1, D]),
+            vi(f"{b}.ffn1_residual", [1, 1, D]),
+        ])
     graph = helper.make_graph(
         nodes,
         f"VOICECHAT_STATEFUL_LAYER_{layer_index}_H{HIST}",
@@ -245,7 +274,8 @@ def build_layer(source: GGUFSource, layer_index: int = 0, debug_intermediates: b
     return model
 
 
-def build_stack(source: GGUFSource, layers: int = 24, validate: bool = True):
+def build_stack(source: GGUFSource, layers: int = 24, validate: bool = True,
+                dynamic_history_mask: bool = False):
     """Merge steady-state layer graphs and add the 4480-wide projection.
 
     Each layer keeps its own external state tensors.  This intentionally uses
@@ -256,11 +286,13 @@ def build_stack(source: GGUFSource, layers: int = 24, validate: bool = True):
     graph_initializers = []
     graph_inputs = [vi("pre_enc_out", [1, 1, D]), vi("pos_freqs", [D // 2]),
                     vi("rel_positions", [2 * (HIST + 1) - 1])]
+    if dynamic_history_mask:
+        graph_inputs.append(vi("attn_mask", [1, 1, 1, HIST + 1]))
     layer_outputs = []
     state_outputs = []
 
     for il in range(layers):
-        sub = build_layer(source, il)
+        sub = build_layer(source, il, dynamic_history_mask=dynamic_history_mask)
         input_map = {
             "pre_enc_out": "pre_enc_out" if il == 0 else f"layer{il - 1}.output",
             "k_hist": f"k_hist_{il}",
@@ -268,6 +300,7 @@ def build_stack(source: GGUFSource, layers: int = 24, validate: bool = True):
             "conv_hist": f"conv_hist_{il}",
             "pos_freqs": "pos_freqs",
             "rel_positions": "rel_positions",
+            "attn_mask": "attn_mask",
             "layer_out": f"layer{il}.output",
         }
         for state_name, shape in ((f"k_hist_{il}", [1, H, HIST, DH]),
@@ -370,14 +403,19 @@ def main() -> int:
     ap.add_argument("--layer", type=int, default=0)
     ap.add_argument("--layers", type=int, choices=(1, 24), default=1)
     ap.add_argument("--debug-intermediates", action="store_true",
-                    help="expose first-FFN output for ggml attribution (one layer only)")
+                    help="expose first-FFN stages/statistics for ggml attribution (one layer only)")
+    ap.add_argument("--dynamic-history-mask", action="store_true",
+                    help="make the causal attention validity mask an input for startup-state research")
     args = ap.parse_args()
     if not 0 <= args.layer < 24:
         raise SystemExit("--layer must be in [0, 23]")
     source = GGUFSource(args.input)
     if args.debug_intermediates and args.layers != 1:
         raise SystemExit("--debug-intermediates is only supported with --layers 1")
-    model = build_stack(source, args.layers, validate=args.layers != 24) if args.layers == 24 else build_layer(source, args.layer, args.debug_intermediates)
+    model = (build_stack(source, args.layers, validate=args.layers != 24,
+                         dynamic_history_mask=args.dynamic_history_mask)
+             if args.layers == 24 else build_layer(source, args.layer, args.debug_intermediates,
+                                                    dynamic_history_mask=args.dynamic_history_mask))
     external_dir = None
     if args.layers == 24:
         external_dir = externalize_initializers(model, args.output)
