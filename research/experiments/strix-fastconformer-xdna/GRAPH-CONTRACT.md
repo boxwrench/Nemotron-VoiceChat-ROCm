@@ -7,7 +7,7 @@ PC D2.
 
 ```text
 VoiceChat runtime source checkout
-commit: 38a76719e2b31a4dfc574bf750bb9ad44c434b81
+commit: 6da91b8c6e5035110721dd3319f0511376d7487c
 source: build/llama-voicechat.cpp/tools/mtmd/models/voicechat.cpp
 converter: build/llama-voicechat.cpp/tools/voicechat/convert_voicechat_perception_to_mmproj.py
 ```
@@ -103,9 +103,12 @@ Each of the 24 layers executes, in order:
 5. final LayerNorm/affine
 ```
 
-The graph has no useful cross-call encoder state. Any XDNA implementation must
-match the production-shaped invocation contract selected by D2; it must not
-invent incompatible recurrent state semantics.
+The original full-prefix graph has no useful cross-call encoder state. The D2
+research runtime at `6da91b8c...` separately proves a bounded one-frame
+encoder mechanism with 70-frame K/V history and eight-frame convolution
+history per layer. Strix may use that as a compiler-feasibility contract, but
+must not present the provisional steady-state graph as the final production
+PCM/frontend or device-placement contract.
 
 ## Four VoiceChat-specific differences
 
@@ -128,7 +131,7 @@ one 4480-wide projected embedding per served frame
 no transcript substitution
 ```
 
-D2 still controls:
+D2 still controls for production serving:
 
 ```text
 prefix/window length
@@ -138,6 +141,17 @@ output-frame selection
 maximum useful conversation prefix
 per-call service-time budget
 ```
+
+For encoder/XDNA feasibility, the imported D2 steady-state boundary is:
+
+```text
+pre_enc_out [1,1,1024]
+24 × K/V [1,8,70,128]
+24 × conv [1,8,1024]
+    -> projected [1,1,4480] + updated bounded state
+```
+
+This is a research handoff, not permission to integrate it into VoiceChat.
 
 The compiler spike therefore uses provisional shapes only. They are not the
 production serving contract. D2 is specifically resolving the past-context

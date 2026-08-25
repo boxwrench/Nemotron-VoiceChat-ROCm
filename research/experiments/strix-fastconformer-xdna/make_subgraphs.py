@@ -121,7 +121,8 @@ def make_fc2():
         helper.make_node("Mul", ["signal", "gate_sigmoid"], ["glu"], name="glu_mul"),
         helper.make_node("Transpose", ["glu"], ["channels_first"], name="to_channels_first", perm=[0, 2, 1]),
         helper.make_node("Pad", ["channels_first", "causal_conv_pads", "pad_value"], ["padded"], name="causal_depthwise_pad"),
-        helper.make_node("Conv", ["padded", "depthwise_weight"], ["dw_out"], name="enc_conv_dw", group=D, pads=[0, 0, 0], strides=[1]),
+        # Input is N,C,L, so a 1-D Conv has two pad values, not three.
+        helper.make_node("Conv", ["padded", "depthwise_weight"], ["dw_out"], name="enc_conv_dw", group=D, pads=[0, 0], strides=[1]),
         helper.make_node("Transpose", ["dw_out"], ["channels_last"], name="to_channels_last", perm=[0, 2, 1]),
         helper.make_node("LayerNormalization", ["channels_last", "ln_scale", "ln_bias"], ["conv_norm_out"], name="conv_norm_out", axis=2, epsilon=1e-5),
         helper.make_node("Sigmoid", ["conv_norm_out"], ["silu_gate"], name="silu_sigmoid"),

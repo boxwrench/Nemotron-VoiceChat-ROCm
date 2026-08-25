@@ -3,9 +3,10 @@
 ## Current strategic status after the PC roadmap reset
 
 ```text
-EXPORT TOOLING                 not a production dependency; local WIP preserved
-XDNA COMPILER COMPATIBILITY    not yet tested
-PRODUCTION XDNA PERCEPTION     DEFERRED pending PC D2
+EXPORT TOOLING                 AVAILABLE WIP; local environment provisioned
+STATEFUL CPU GRAPH             PASS for one layer and all 24 layers
+XDNA COMPILER COMPATIBILITY    NOT TESTED; current namespace has no VitisAI EP
+PRODUCTION XDNA PERCEPTION     DEFERRED; feasibility only, no integration
 ```
 
 The local exporter and generated graphs are preserved as preparation. They are
@@ -40,7 +41,9 @@ result: BLOCKED — No module named 'onnx'
 
 This is an export/toolchain blocker, not evidence that XDNA cannot execute the
 graph. The exact contract and operator inventory are source-derived and are
-ready for a host-side graph preparation run.
+ready for a host-side graph preparation/run; the D2 import and stateful graph
+results are documented in `D2-IMPORT-CONTRACT.md` and
+`S4-FEASIBILITY-RESULTS.md`.
 
 ## Representative subgraphs
 
