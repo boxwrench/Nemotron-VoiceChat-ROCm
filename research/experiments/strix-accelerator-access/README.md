@@ -19,6 +19,13 @@ evidence about the current shell, not proof that the host hardware is absent.
 Run it from a host shell with enough visibility to compare against this
 session.
 
+For the host-boundary handoff, run [`host_probe.sh`](host_probe.sh) from an
+ordinary host shell. It performs the minimal read-only node, driver, package,
+ROCm, XRT, and FLM checks without changing permissions or installing anything.
+The host capture has now confirmed device visibility and successful XDNA LLM
+and speech execution; see [STRIX-BRINGUP-2](../STRIX-BRINGUP-2.md)
+for the sanitized evidence and remaining graph-compatibility questions.
+
 ## Run
 
 ```bash

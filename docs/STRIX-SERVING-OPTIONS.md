@@ -119,6 +119,11 @@ preempt synchronous in-flight synthesis, so it is `QUALIFY`, not an approved
 renderer integration. See [STRIX-BRINGUP-1](../research/experiments/STRIX-BRINGUP-1.md)
 and the [TTS-B1 report](../research/experiments/strix-tts-bakeoff/generated/TTS-B1/REPORT.md).
 
+Current TTS decision: **Kokoro `QUALIFY` — viable renderer architecture, not
+currently compelling enough to displace native TTS.** Reopen it only if PC
+work establishes native output as a real conversational bottleneck or another
+renderer demonstrates genuinely streaming, preemptible synthesis.
+
 The AMD Parakeet-TDT source study is also a qualified feasibility lead, not a
 port. AMD's static-shape, depthwise Pad-to-Conv, and attention-mask rewrites
 are relevant to the VoiceChat fallback observation, but the exact VoiceChat
