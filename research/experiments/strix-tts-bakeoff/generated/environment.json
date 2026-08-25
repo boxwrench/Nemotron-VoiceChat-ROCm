@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "experiment": "STRIX-TTS-BAKEOFF-CPU-001",
+  "scope": "isolated renderer characterization; no VoiceChat runtime integration",
+  "fixtures": {
+    "short": "The quick brown fox jumps over the lazy dog.",
+    "medium": "A fluent spoken assistant must begin responding before the complete answer has been generated. It must keep producing audio while text continues to arrive, and it must stop promptly when the user interrupts.",
+    "long": "The Strix serving study treats the conversational timeline as the product boundary. A speech renderer may be replaced if it accepts text quickly, starts audio incrementally, sustains real-time output, and drains or cancels without damaging conversation state. The useful comparison is therefore not model identity but the felt latency, continuity, and interruptibility of the resulting conversation."
+  },
+  "environment": {
+    "schema": 1,
+    "captured_at_unix": 1787614623.787479,
+    "host": {
+      "system": "Linux",
+      "release": "6.17.0-35-generic",
+      "machine": "x86_64",
+      "python": "3.12.3",
+      "cpu_count": 32
+    },
+    "repo_head": "2f8b361bdacf521019c73543dffb06c222bc799f",
+    "kernel_device_visibility": {
+      "dev_kfd": false,
+      "dev_dri": false,
+      "render_nodes": []
+    },
+    "native_binary": "exit=0: ggml_cuda_init: failed to initialize ROCm: no ROCm-capable device is detected\nversion: 0.1.0-dev (build 10441, commit 38a76719e)\nbuilt with GNU 13.3.0 for Linux x86_64",
+    "kokoro": {
+      "root_label": "local AI-Box Kokoro checkout",
+      "model_present": true,
+      "voice_present": true
+    },
+    "amd_smi_list": {
+      "exit": 0,
+      "output": "GPU: 0\n    BDF: 0000:c5:00.0\n    UUID: 00ff1586-0000-1000-8000-000000000000\n    KFD_ID: 51259\n    NODE_ID: 1\n    PARTITION_ID: 0\n\n"
+    },
+    "xdna_top_snapshot": {
+      "exit": 0,
+      "output": "{\n  \"backends\": {\n    \"igpu\": {\n      \"primary\": \"sysfs\",\n      \"signals\": {\n        \"busy_pct\": \"sysfs\",\n        \"power_w\": \"sysfs\"\n      }\n    },\n    \"npu\": {\n      \"fallbacks_used\": [],\n      \"primary\": \"xrt_smi\",\n      \"signals\": {\n        \"contexts\": null,\n        \"device\": null,\n        \"driver\": null,\n        \"power_state\": null,\n        \"sensors\": null\n      }\n    }\n  },\n  \"captured_at\": \"2026-08-24T23:37:04.073856Z\",\n  \"commands\": {\n    \"xrt_smi\": {\n      \"aie_partitions_returncode\": 1,\n      \"available\": true,\n      \"examine_returncode\": 0,\n      \"path\": \"/usr/bin/xrt-smi\",\n      \"version_output\": \"Version : 2.21.75 virtio-pci Version : 6.17.0-35-generic amdxdna Version : 6.17.0-35-generic\"\n    }\n  },\n  \"degraded\": {\n    \"igpu\": {\n      \"degraded\": false,\n      \"reasons\": []\n    },\n    \"npu\": {\n      \"degraded\": true,\n      \"reasons\": [\n        \"aie_partitions_report_failed\"\n      ]\n    },\n    \"overall\": true\n  },\n  \"devices\": {\n    \"accel\": {\n      \"entries\": [\n        {\n          \"exists\": false,\n          \"path\": \"/dev/accel/accel0\"\n        }\n      ]\n    },\n    \"igpu\": {\n      \"busy_path\": \"/sys/class/drm/card0/device/gpu_busy_percent\",\n      \"busy_path_exists\": true,\n      \"power_path\": \"/sys/class/hwmon/hwmon5/power1_input\",\n      \"power_path_exists\": true\n    },\n    \"npu\": {\n      \"bdf\": null,\n      \"contexts\": [],\n      \"detected\": false,\n      \"driver\": {\n        \"drm_version\": null,\n        \"supports_sensors\": false\n      },\n      \"ioctl\": {\n        \"aie\": null,\n        \"aie_version\": null,\n        \"available\": false,\n        \"clocks\": null,\n        \"driver\": null,\n        \"firmware_version\": null,\n        \"node\": null,\n        \"reason\": \"accel_absent\",\n        \"sensors\": {\n          \"available\": false,\n          \"items\": [],\n          \"reason\": null\n        },\n        \"source\": null,\n        \"supports_sensors\": false\n      },\n      \"name\": null,\n      \"power_state\": {\n        \"available\": false,\n        \"dpm\": null,\n        \"powerstate\": null,\n        \"reason\": \"debugfs_accel_absent\",\n        \"source\": null\n      },\n      \"report_shape\": {\n        \"context_count\": 0,\n        \"has_aie_partitions\": false,\n        \"has_hw_contexts\": false\n      },\n      \"sensors\": {\n        \"column_utilization_pct\": {\n          \"source\": null,\n          \"value\": null\n        },\n        \"power_w\": {\n          \"source\": null,\n          \"value\": null\n        }\n      }\n    }\n  },\n  \"errors\": [\n    {\n      \"message\": \"ERROR: Please specify a device using --device option Available devices:\",\n      \"probe\": \"xrt_smi.aie_partitions\"\n    }\n  ],\n  \"host\": {\n    \"hostname\": \"Nimo\",\n    \"kernel\": {\n      \"release\": \"6.17.0-35-generic\",\n      \"version\": \"#35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2\"\n    },\n    \"os\": {\n      \"id\": \"linuxmint\",\n      \"pretty_name\": \"Linux Mint 22.3\",\n      \"version_id\": \"22.3\"\n    },\n    \"python\": {\n      \"version\": \"3.12.3\"\n    },\n    \"xdna_top\": {\n      \"version\": \"0.1.0\"\n    }\n  },\n  \"kind\": \"xdna-top.snapshot\",\n  \"schema_version\": \"1.0\",\n  \"telemetry\": {\n    \"gpu_busy_pct\": 0,\n    \"gpu_power_w\": 14.01,\n    \"igpu_degraded\": false,\n    \"npu_active\": false,\n    \"npu_degraded\": true,\n    \"state\": \"IDLE\",\n    \"ts\": 1787614624.0736191\n  }\n}\n"
+    },
+    "rocminfo_probe": {
+      "exit": 1,
+      "output": "\u001b[37mROCk module is loaded\u001b[0m\n\u001b[31mUnable to open /dev/kfd read-write: No such file or directory\u001b[0m\n\u001b[31mFailed to get user name to check for video group membership\u001b[0m\n"
+    }
+  },
+  "renderer_controls": {
+    "native_voicechat": "validated Q8 VoiceChat TTS+codec via --say, forced CPU",
+    "kokoro_cpu": "Kokoro V1 direct Python generator, CPU because CUDA unavailable"
+  },
+  "kokoro_load": {
+    "device": "cpu",
+    "torch_version": "2.5.1+rocm6.2",
+    "torch_cuda_available": false,
+    "model_load_seconds": 0.6670327360043302,
+    "pipeline_init_seconds": 0.38935141800902784
+  },
+  "results_count": 6
+}

@@ -1,0 +1,256 @@
+[
+  {
+    "renderer": "native_voicechat",
+    "fixture": "short",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 4.222955369972624,
+    "first_pcm_ms": 4080.6222719838843,
+    "pcm_streaming": "final_file_only",
+    "pcm_chunks": 1,
+    "chunk_audio_seconds": [
+      4.0
+    ],
+    "inter_chunk_gap_ms": [],
+    "audio": {
+      "sample_rate": 22050,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 88200,
+      "audio_seconds": 4.0,
+      "pcm_bytes": 176400
+    },
+    "audio_speed_ratio": 0.9472039483159232,
+    "drain": {
+      "status": "completed_before_final_wav_write",
+      "drain_ms_after_last_pcm": 0.0
+    },
+    "cancellation": {
+      "status": "not_exposed_by_native_say_cli",
+      "measurement": null,
+      "note": "The native renderer has lifecycle/silence state internally, but this isolated CLI exposes no playback-cancel operation or PCM stream."
+    },
+    "cpu_seconds": 40.13,
+    "cpu_percent_one_core": 950.2823611479502,
+    "peak_rss_kib": 13366940,
+    "gpu_telemetry": "unavailable: /dev/kfd absent in executing shell",
+    "npu_telemetry": "not applicable: native renderer was forced to CPU",
+    "log": "research/experiments/strix-tts-bakeoff/generated/logs/native_voicechat-short.log",
+    "generated_tts_frames": null
+  },
+  {
+    "renderer": "native_voicechat",
+    "fixture": "medium",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 10.050781045109034,
+    "first_pcm_ms": 9906.736450036988,
+    "pcm_streaming": "final_file_only",
+    "pcm_chunks": 1,
+    "chunk_audio_seconds": [
+      12.96
+    ],
+    "inter_chunk_gap_ms": [],
+    "audio": {
+      "sample_rate": 22050,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 285768,
+      "audio_seconds": 12.96,
+      "pcm_bytes": 571536
+    },
+    "audio_speed_ratio": 1.2894520278408281,
+    "drain": {
+      "status": "completed_before_final_wav_write",
+      "drain_ms_after_last_pcm": 0.0
+    },
+    "cancellation": {
+      "status": "not_exposed_by_native_say_cli",
+      "measurement": null,
+      "note": "The native renderer has lifecycle/silence state internally, but this isolated CLI exposes no playback-cancel operation or PCM stream."
+    },
+    "cpu_seconds": 119.65,
+    "cpu_percent_one_core": 1190.4547463823694,
+    "peak_rss_kib": 13371296,
+    "gpu_telemetry": "unavailable: /dev/kfd absent in executing shell",
+    "npu_telemetry": "not applicable: native renderer was forced to CPU",
+    "log": "research/experiments/strix-tts-bakeoff/generated/logs/native_voicechat-medium.log",
+    "generated_tts_frames": null
+  },
+  {
+    "renderer": "native_voicechat",
+    "fixture": "long",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 18.117382513009943,
+    "first_pcm_ms": 17972.188708023168,
+    "pcm_streaming": "final_file_only",
+    "pcm_chunks": 1,
+    "chunk_audio_seconds": [
+      24.48
+    ],
+    "inter_chunk_gap_ms": [],
+    "audio": {
+      "sample_rate": 22050,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 539784,
+      "audio_seconds": 24.48,
+      "pcm_bytes": 1079568
+    },
+    "audio_speed_ratio": 1.351188560622436,
+    "drain": {
+      "status": "completed_before_final_wav_write",
+      "drain_ms_after_last_pcm": 0.0
+    },
+    "cancellation": {
+      "status": "not_exposed_by_native_say_cli",
+      "measurement": null,
+      "note": "The native renderer has lifecycle/silence state internally, but this isolated CLI exposes no playback-cancel operation or PCM stream."
+    },
+    "cpu_seconds": 229.91,
+    "cpu_percent_one_core": 1269.002295640132,
+    "peak_rss_kib": 13376728,
+    "gpu_telemetry": "unavailable: /dev/kfd absent in executing shell",
+    "npu_telemetry": "not applicable: native renderer was forced to CPU",
+    "log": "research/experiments/strix-tts-bakeoff/generated/logs/native_voicechat-long.log",
+    "generated_tts_frames": null
+  },
+  {
+    "renderer": "kokoro_cpu",
+    "fixture": "short",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 0.34252535295672715,
+    "first_pcm_ms": 342.5162340281531,
+    "pcm_streaming": "sentence_chunks",
+    "pcm_chunks": 1,
+    "chunk_audio_seconds": [
+      3.575
+    ],
+    "chunk_pcm_bytes": [
+      171600
+    ],
+    "inter_chunk_gap_ms": [],
+    "audio": {
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 85800,
+      "audio_seconds": 3.575,
+      "pcm_bytes": 171600
+    },
+    "audio_speed_ratio": 10.437183610322846,
+    "drain": {
+      "status": "generator_exhausted",
+      "drain_ms_after_last_pcm": 0.009118928574025631
+    },
+    "cancellation": {
+      "status": "generator_close_only",
+      "after_first_chunk": true,
+      "close_ms": 475.41770804673433,
+      "note": "The direct pipeline exposes generator close, not a renderer-level cancel_pending_audio event."
+    },
+    "cpu_seconds": 10.449807039,
+    "cpu_percent_one_core": 3050.8185361450237,
+    "peak_rss_kib": 2616232,
+    "gpu_telemetry": "unavailable: /dev/kfd absent; torch.cuda.is_available() false",
+    "npu_telemetry": "not exercised",
+    "model_label": "Kokoro V1 local model / af_bella voice"
+  },
+  {
+    "renderer": "kokoro_cpu",
+    "fixture": "medium",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 1.146080508013256,
+    "first_pcm_ms": 547.5380350835621,
+    "pcm_streaming": "sentence_chunks",
+    "pcm_chunks": 2,
+    "chunk_audio_seconds": [
+      6.875,
+      7.45
+    ],
+    "chunk_pcm_bytes": [
+      330000,
+      357600
+    ],
+    "inter_chunk_gap_ms": [
+      598.5281829489395
+    ],
+    "audio": {
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 343800,
+      "audio_seconds": 14.325,
+      "pcm_bytes": 687600
+    },
+    "audio_speed_ratio": 12.499121920180421,
+    "drain": {
+      "status": "generator_exhausted",
+      "drain_ms_after_last_pcm": 0.014289980754256248
+    },
+    "cancellation": {
+      "status": "generator_close_only",
+      "after_first_chunk": true,
+      "close_ms": 325.825963052921,
+      "note": "The direct pipeline exposes generator close, not a renderer-level cancel_pending_audio event."
+    },
+    "cpu_seconds": 19.258356695,
+    "cpu_percent_one_core": 1681.5905397788242,
+    "peak_rss_kib": 2811016,
+    "gpu_telemetry": "unavailable: /dev/kfd absent; torch.cuda.is_available() false",
+    "npu_telemetry": "not exercised",
+    "model_label": "Kokoro V1 local model / af_bella voice"
+  },
+  {
+    "renderer": "kokoro_cpu",
+    "fixture": "long",
+    "status": "pass",
+    "returncode": 0,
+    "wall_seconds": 2.111865849001333,
+    "first_pcm_ms": 306.0510280774906,
+    "pcm_streaming": "sentence_chunks",
+    "pcm_chunks": 3,
+    "chunk_audio_seconds": [
+      5.975,
+      12.25,
+      10.025
+    ],
+    "chunk_pcm_bytes": [
+      286800,
+      588000,
+      481200
+    ],
+    "inter_chunk_gap_ms": [
+      975.1918059773743,
+      830.6121750501916
+    ],
+    "audio": {
+      "sample_rate": 24000,
+      "channels": 1,
+      "sample_width_bytes": 2,
+      "frames": 678000,
+      "audio_seconds": 28.25,
+      "pcm_bytes": 1356000
+    },
+    "audio_speed_ratio": 13.376796643290087,
+    "drain": {
+      "status": "generator_exhausted",
+      "drain_ms_after_last_pcm": 0.010839896276593208
+    },
+    "cancellation": {
+      "status": "generator_close_only",
+      "after_first_chunk": true,
+      "close_ms": 281.7538829986006,
+      "note": "The direct pipeline exposes generator close, not a renderer-level cancel_pending_audio event."
+    },
+    "cpu_seconds": 29.900622157,
+    "cpu_percent_one_core": 1415.839997656079,
+    "peak_rss_kib": 3082804,
+    "gpu_telemetry": "unavailable: /dev/kfd absent; torch.cuda.is_available() false",
+    "npu_telemetry": "not exercised",
+    "model_label": "Kokoro V1 local model / af_bella voice"
+  }
+]

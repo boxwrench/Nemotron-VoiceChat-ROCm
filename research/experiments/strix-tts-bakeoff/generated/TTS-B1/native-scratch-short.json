@@ -1,0 +1,27 @@
+{
+  "experiment": "STRIX-TTS-BAKEOFF-TTS-B1",
+  "fixture": "short",
+  "scope": "one native CPU scratch-instrumentation run; ignored build checkout only",
+  "command": "VC_TTS_SCRATCH_TRACE=1 llama-voicechat --device none --threads 16 --threads-batch 16 --ctx-size 256 --session-seconds 15 --mmproj <Q8 perception> --model <Q8 LLM> --tts <Q8 TTS> --tts-device CPU --say <short fixture> --tts-out <temporary wav>",
+  "silence_threshold": 0.99,
+  "first_non_silent_native_frame": {
+    "frame": 4,
+    "silence_cos": -0.079006,
+    "log_time_ms": 1556.872,
+    "relative_to_say_ms": 105.375
+  },
+  "first_quiet_drain_frame": {
+    "drain_index": 22,
+    "frame": 36,
+    "silence_cos": 0.977222,
+    "log_time_ms": 2510.114
+  },
+  "first_silence_threshold_drain_frame": {
+    "drain_index": 23,
+    "frame": 37,
+    "silence_cos": 0.999985,
+    "log_time_ms": 2537.873
+  },
+  "final_wav_write_ms": 3948.837,
+  "interpretation": "The scratch trace distinguishes native frame voicing and quiet-drain behavior. It does not expose a streaming PCM buffer; final WAV write remains the first observable decodable PCM boundary in the public --say path."
+}

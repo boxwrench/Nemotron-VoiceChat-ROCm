@@ -1,0 +1,99 @@
+{
+  "experiment": "STRIX-TTS-BAKEOFF-CPU-001",
+  "classification": "Kokoro PROMISING; native vs Kokoro NOT YET A FAIR PERFORMANCE COMPARISON; CPU-only isolated characterization, not a gfx1151 GPU performance result because /dev/kfd was absent",
+  "comparison_validity": "Behavioral evidence only: native rows are cold-process full-runtime measurements; Kokoro is warm-loaded once. Not a controlled cross-renderer latency ranking.",
+  "rows": [
+    {
+      "renderer": "native_voicechat",
+      "fixture": "short",
+      "status": "pass",
+      "first_pcm_ms": 4080.6222719838843,
+      "wall_seconds": 4.222955369972624,
+      "audio_seconds": 4.0,
+      "audio_speed_ratio": 0.9472039483159232,
+      "pcm_chunks": 1,
+      "drain_status": "completed_before_final_wav_write",
+      "cancellation_status": "not_exposed_by_native_say_cli",
+      "cpu_percent_one_core": 950.2823611479502,
+      "peak_rss_kib": 13366940
+    },
+    {
+      "renderer": "native_voicechat",
+      "fixture": "medium",
+      "status": "pass",
+      "first_pcm_ms": 9906.736450036988,
+      "wall_seconds": 10.050781045109034,
+      "audio_seconds": 12.96,
+      "audio_speed_ratio": 1.2894520278408281,
+      "pcm_chunks": 1,
+      "drain_status": "completed_before_final_wav_write",
+      "cancellation_status": "not_exposed_by_native_say_cli",
+      "cpu_percent_one_core": 1190.4547463823694,
+      "peak_rss_kib": 13371296
+    },
+    {
+      "renderer": "native_voicechat",
+      "fixture": "long",
+      "status": "pass",
+      "first_pcm_ms": 17972.188708023168,
+      "wall_seconds": 18.117382513009943,
+      "audio_seconds": 24.48,
+      "audio_speed_ratio": 1.351188560622436,
+      "pcm_chunks": 1,
+      "drain_status": "completed_before_final_wav_write",
+      "cancellation_status": "not_exposed_by_native_say_cli",
+      "cpu_percent_one_core": 1269.002295640132,
+      "peak_rss_kib": 13376728
+    },
+    {
+      "renderer": "kokoro_cpu",
+      "fixture": "short",
+      "status": "pass",
+      "first_pcm_ms": 342.5162340281531,
+      "wall_seconds": 0.34252535295672715,
+      "audio_seconds": 3.575,
+      "audio_speed_ratio": 10.437183610322846,
+      "pcm_chunks": 1,
+      "drain_status": "generator_exhausted",
+      "cancellation_status": "generator_close_only",
+      "cpu_percent_one_core": 3050.8185361450237,
+      "peak_rss_kib": 2616232
+    },
+    {
+      "renderer": "kokoro_cpu",
+      "fixture": "medium",
+      "status": "pass",
+      "first_pcm_ms": 547.5380350835621,
+      "wall_seconds": 1.146080508013256,
+      "audio_seconds": 14.325,
+      "audio_speed_ratio": 12.499121920180421,
+      "pcm_chunks": 2,
+      "drain_status": "generator_exhausted",
+      "cancellation_status": "generator_close_only",
+      "cpu_percent_one_core": 1681.5905397788242,
+      "peak_rss_kib": 2811016
+    },
+    {
+      "renderer": "kokoro_cpu",
+      "fixture": "long",
+      "status": "pass",
+      "first_pcm_ms": 306.0510280774906,
+      "wall_seconds": 2.111865849001333,
+      "audio_seconds": 28.25,
+      "audio_speed_ratio": 13.376796643290087,
+      "pcm_chunks": 3,
+      "drain_status": "generator_exhausted",
+      "cancellation_status": "generator_close_only",
+      "cpu_percent_one_core": 1415.839997656079,
+      "peak_rss_kib": 3082804
+    }
+  ],
+  "limitations": [
+    "No /dev/kfd or render nodes were visible to the executing shell; GPU/NPU utilization and power were not measured.",
+    "Native rows include cold full-runtime startup for every fixture; Kokoro is warm-loaded once, so the timing rows are not a controlled cross-renderer latency comparison.",
+    "Native VoiceChat TTS emits codec PCM only at final WAV write in the isolated --say path.",
+    "Native peak RSS includes the loaded VoiceChat LLM/projector as well as the TTS model; Kokoro RSS includes the warm Python process.",
+    "Kokoro direct generator close measures the exposed Python generator boundary, not cancellation of an in-flight accelerator kernel.",
+    "No subjective listening evaluation was performed."
+  ]
+}

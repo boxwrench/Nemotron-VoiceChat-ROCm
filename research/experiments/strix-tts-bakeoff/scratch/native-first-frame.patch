@@ -1,0 +1,36 @@
+diff --git a/tools/voicechat/voicechat-cli.cpp b/tools/voicechat/voicechat-cli.cpp
+index 10facb2ae..8a138d36d 100644
+--- a/tools/voicechat/voicechat-cli.cpp
++++ b/tools/voicechat/voicechat-cli.cpp
+@@ -1280,14 +1280,29 @@ static bool vc_say(vc_session & sess, const std::string & text, int pace, const
+
+     for (llama_token tok : toks) {
+         sess.tts_feed(tok);
++        if (getenv("VC_TTS_SCRATCH_TRACE")) {
++            LOG_INF("voicechat-tts: scratch input token=%d frame=%d silence_cos=%.6f\n",
++                    (int) tok, voicechat_tts_n_frames(sess.tts),
++                    voicechat_tts_silence_cos(sess.tts));
++        }
+         for (int i = 1; i < pace; ++i) {
+             sess.tts_feed(sess.tok_pad);
++            if (getenv("VC_TTS_SCRATCH_TRACE")) {
++                LOG_INF("voicechat-tts: scratch input pad frame=%d silence_cos=%.6f\n",
++                        voicechat_tts_n_frames(sess.tts),
++                        voicechat_tts_silence_cos(sess.tts));
++            }
+         }
+     }
+     int n_silent = 0;
+     const int drain_cap = sess.n_drain_max + 4 * (int) sess.tts_q.size();
+     for (int i = 0; i < drain_cap; ++i) {
+         sess.tts_feed(sess.tok_pad);
++        if (getenv("VC_TTS_SCRATCH_TRACE")) {
++            LOG_INF("voicechat-tts: scratch drain=%d frame=%d silence_cos=%.6f\n",
++                    i, voicechat_tts_n_frames(sess.tts),
++                    voicechat_tts_silence_cos(sess.tts));
++        }
+         n_silent = voicechat_tts_silence_cos(sess.tts) >= sess.silence_cos ? n_silent + 1 : 0;
+         if (sess.tts_q.empty() && i >= sess.n_drain_min && n_silent >= sess.n_drain_quiet) {
+             break;
+         }
+     }

@@ -1,0 +1,5 @@
+# Audio is a temporary measurement transport, not durable evidence.
+*.wav
+*.pcm
+*.flac
+*.mp3

@@ -104,6 +104,27 @@ conversation latency with fewer deadline spikes, lower CPU load, more GPU
 headroom, or materially better power/thermal behavior can be a serving win.
 NPU utilization without a conversational benefit is not a win.
 
+## Current bounded evidence
+
+`STRIX-BRINGUP-1` keeps the first TTS bakeoff as `TTS-B0` and adds a repeatable
+`TTS-B1` renderer study. Kokoro is currently `PROMISING`; the native-vs-Kokoro
+numbers are **not yet a fair performance comparison** because native runs use
+the cold full VoiceChat process while Kokoro uses a warm reused CPU model, and
+the native public path exposes final WAV output rather than PCM chunks.
+
+The isolated 12.5 Hz text-stream simulator found that a bounded-word policy
+started Kokoro audio sooner than sentence or clause flushing on the tested
+fixtures, with no modeled underruns. The current CPU adapter still cannot
+preempt synchronous in-flight synthesis, so it is `QUALIFY`, not an approved
+renderer integration. See [STRIX-BRINGUP-1](../research/experiments/STRIX-BRINGUP-1.md)
+and the [TTS-B1 report](../research/experiments/strix-tts-bakeoff/generated/TTS-B1/REPORT.md).
+
+The AMD Parakeet-TDT source study is also a qualified feasibility lead, not a
+port. AMD's static-shape, depthwise Pad-to-Conv, and attention-mask rewrites
+are relevant to the VoiceChat fallback observation, but the exact VoiceChat
+embedding graph, Linux compile/load path, and operator correspondence remain
+unproven. See the [XDNA feasibility study](../research/experiments/strix-xdna-parakeet-feasibility/README.md).
+
 ## Prior-art findings
 
 ### Lemonade Server
