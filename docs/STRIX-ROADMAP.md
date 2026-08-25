@@ -45,26 +45,37 @@ parked performance lead, not an active implementation task.
 ## S1 — Import the production-shaped PC perception runtime
 
 Do not independently reimplement the conversational timeline on Strix. The
-PC/R9700 remains the development and reference machine for the Nemotron runtime
-and its M4 behavior.
+PC/R9700 remains the reference-runtime track for the Nemotron duplex
+architecture; Strix consumes what it proves rather than re-deriving it.
 
-The prior-art and serving study starts now. Strix waits only for the PC to
-finish the next perception gate:
+M4 (the PC's original duplex-feasibility investigation) is now closed as
+historical research -- see `docs/M4-DUPLEX-DESIGN.md`. It resolved the
+*future*-context question (zero-lookahead is viable) but found the *past*-
+context question open: a naive growing-prefix re-encode gets too expensive
+above ~20-24s, and no bounded window tested yet has both timing margin and
+reliable fidelity. That open question is now tracked as `D2` in the PC
+roadmap, not `M4A-2` (M4A itself closed ESCALATE, not a clean production
+freeze).
+
+The prior-art and serving study runs now, in parallel, not blocked on the
+PC. Strix waits only for these PC **contracts**, not named PC milestone
+numbers:
 
 ```text
-M4-0    DONE
-M4A-1   PROMOTE zero-lookahead
-M4A-2   measure growing-prefix perception cost versus the 80 ms budget
-        then freeze a production-shaped continuous-input perception runtime
+D1   async native audio renderer contract (queue shape, backpressure)
+D2   production continuous-perception contract (bounded-context or
+     cached-encode strategy, with its exact runtime SHA frozen)
+D3   continuous causal live-timeline protocol
 ```
 
-Once that exact runtime SHA exists, build it for gfx1151 and measure the same
-perception path on Strix. PC M4B/M4C/M4D may continue in parallel; Strix does
-not wait for the entire PC duplex milestone or for RX 7900 XT validation.
+Once `D2` produces that exact runtime SHA, build it for gfx1151 and measure
+the same perception path on Strix. `D1`/`D3`/`D4`/`D5` may continue on the PC
+in parallel; Strix does not wait for the full PC duplex program or for
+RX 7900 XT (`H1`) validation.
 
 When the full continuous runtime is later frozen, Strix imports that exact
 `llama-voicechat.cpp` SHA rather than independently implementing duplex. The
-identical M4 acceptance suite remains:
+identical acceptance suite remains:
 
 ```text
 continuous PCM
@@ -211,7 +222,7 @@ cheap, explicit, and must preserve cancellation, streaming, and timeline state.
 
 ## S4 — Profile the production-shaped path and rank roles
 
-After PC M4A-2 produces a frozen production-shaped continuous-input
+After PC `D2` produces a frozen production-shaped continuous-input
 perception runtime, measure the same path on gfx1151 before moving anything.
 Then build the full component cost map for:
 
@@ -306,7 +317,7 @@ Investigate in order:
 4. Can the VoiceChat FastConformer operators be represented?
 5. What precision is required?
 6. What input shapes must be static?
-7. Can the exact production-shaped perception contract selected by M4A-2 be
+7. Can the exact production-shaped perception contract selected by `D2` be
    represented efficiently on XDNA2?
 8. What are model-load and invocation overheads?
 
@@ -420,11 +431,11 @@ S3B  Strix serving-component and KEEP/RELOCATE/REPLACE map
 S3C  replaceable renderer and serving-interface definition
 ```
 
-Wait only for the PC to finish M4A-2 and freeze the production-shaped
+Wait only for the PC's `D2` contract: a frozen production-shaped
 continuous-input perception runtime. Then build it on gfx1151, measure the
 same perception path, and rank the candidates before any full integration.
 
-Meanwhile PC M4B -> M4C -> M4D may continue independently.
+Meanwhile PC `D1`/`D3`/`D4`/`D5` may continue independently.
 
 Rules:
 

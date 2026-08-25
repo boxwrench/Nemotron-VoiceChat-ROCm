@@ -1,14 +1,18 @@
 # M4 design: native continuous duplex VoiceChat
 
-Status: **M4 closed.** Design and feasibility work (M4-0, M4A, M4P, M4B)
-ran to completion; the fork this document's M4-0A/M4-0B tradeoffs pointed
-toward has resolved to **ship PTT v0.1 first, continue duplex
-afterward.** No runtime or client production code changed as a result of
-this milestone -- every finding below came from source reading,
-measurement scripts, and uncommitted/throwaway runtime instrumentation on
-research branches, none of it merged. See "M4 closed: summary and
-disposition" near the bottom for the full closing classification and
-what carries forward.
+Status: **M4 closed, historical.** Design and feasibility work (M4-0,
+M4A, M4P, M4B) ran to completion; the fork this document's M4-0A/M4-0B
+tradeoffs pointed toward resolved to **ship PTT v0.1 first, continue
+duplex afterward** -- v0.1.0 has since shipped (tagged `v0.1.0`). Two
+promoted findings (the GPU function-head projection and M3.1's post-turn
+streaming playback) made it into the v0.1.0 runtime pin; everything else
+below came from source reading, measurement scripts, and
+uncommitted/throwaway runtime instrumentation on research branches, none
+of it merged into `amd/rocm`. M4 was not a failure to build duplex -- it
+turned a giant unknown problem into a map, and that map is now the
+post-v0.1 program (`D1`-`D7`, see the [README](../README.md#roadmap)).
+See "M4 closed: summary and disposition" near the bottom for the full
+closing classification and what carries forward.
 
 ## M4 journey (top-level summary)
 
@@ -545,8 +549,10 @@ productization (AEC), not solve while still validating the core premise.
 - **M4C -- simultaneous input and output.** Not started. The retained
   leads from M4B-2 (background/async codec worker, or reducing the
   codec graph's node count) are its likely entry points, deferred to
-  post-v0.1.
-- **M4D -- barge-in.** Not started, deferred with M4C.
+  post-v0.1 and now tracked as `D1` (async renderer) and `D3` (live
+  timeline) in the [README roadmap](../README.md#roadmap).
+- **M4D -- barge-in.** Not started, deferred with M4C; now tracked as
+  `D5`.
 
 ## M4 closed: summary and disposition
 
@@ -587,21 +593,33 @@ structure, not codec capability), and closed off several plausible-looking
 but wrong explanations (graph-rebuild overhead, perception future-context
 cost) before any implementation investment went into them.
 
-What carries forward, retained as named leads for after v0.1:
+What carries forward, retained as named leads for after v0.1 (now tracked
+as `D1`-`D6` in the [README roadmap](../README.md#roadmap)):
 
-- **Background/async codec worker** -- the natural M4C-shaped answer to
-  M4B-2's synchronous-latency finding.
-- **Depthwise-conv graph node-count reduction** -- the codec's 593-node
-  steady-state graph comes from expanding each depthwise conv as a sum
-  of `kk` shifted-view multiplies rather than a single fused op;
-  unexplored, possibly cheaper than async.
-- **External/replacement TTS** -- native TTS is architecturally the
-  largest remaining single-GPU budget item (M4P-1/M4P-2), with a clean,
-  confirmed replaceable-renderer boundary (nothing feeds back into main
-  state), but out of scope for now per standing instruction.
-- **Multi-GPU** -- blocked entirely by a reproducible segfault whenever
-  more than one ROCm device is visible to the process (found in M4P-1),
-  undebugged, carried forward untouched.
+- **Background/async codec worker** (`D1`, next) -- the natural answer to
+  M4B-2's synchronous-latency finding: test scheduling before reaching
+  for codec kernel work.
+- **Depthwise-conv graph node-count reduction** (`D6` candidate) -- the
+  codec's 593-node steady-state graph comes from expanding each
+  depthwise conv as a sum of `kk` shifted-view multiplies rather than a
+  single fused op; unexplored, possibly cheaper than async.
+- **Bounded/cached perception context** (`D2`, next) -- the real open
+  question left by M4A: not "does perception need the future" (resolved,
+  negligible), but how to cheaply maintain enough *past* context once a
+  naive growing-prefix re-encode gets too expensive.
+- **External/replacement TTS** (`D6` candidate, serious not sacred) --
+  native TTS is architecturally the largest remaining single-GPU budget
+  item (M4P-1/M4P-2), with a clean, confirmed replaceable-renderer
+  boundary (nothing feeds back into main state). Kept alive as a real
+  comparison target once `D3` gives a working native control to compare
+  against -- not integrated before then.
+- **Multi-GPU** (`H2`, later) -- blocked entirely by a reproducible
+  segfault whenever more than one ROCm device is visible to the process
+  (found in M4P-1), undebugged, carried forward untouched. `H2` is a
+  diagnostic-ceiling experiment (does a second GPU trivialize duplex by
+  removing same-GPU contention?), not a shipping requirement, and comes
+  after `H1` (gfx1100 validation) and a bounded fix for this crash --
+  not before single-R9700 duplex work.
 
 ## Strix Halo roadmap handoff
 
@@ -611,15 +629,27 @@ conversation core and timeline remain the behavioral anchor, while perception,
 TTS, codec, auxiliary ASR, AEC/VAD, and serving infrastructure may be kept,
 relocated, or replaced when evidence says the conversation improves.
 
-The prior-art and serving-options study starts now, before the full PC M4
-implementation. See [docs/STRIX-ROADMAP.md](STRIX-ROADMAP.md) and
+The prior-art and serving-options study runs now, in parallel with the
+PC `D1`-`D3` work, not blocked on it. See
+[docs/STRIX-ROADMAP.md](STRIX-ROADMAP.md) and
 [docs/STRIX-SERVING-OPTIONS.md](STRIX-SERVING-OPTIONS.md).
 
-Strix waits for the PC only at the production-shaped perception gate: M4A-2
-must measure the promoted zero-lookahead/growing-prefix perception path against
-the 80 ms budget and freeze its exact runtime SHA. PC M4B/M4C/M4D may continue
-in parallel. No XDNA implementation, replacement-TTS integration, or current
-fallback optimization begins merely because the source study is underway.
+Strix waits for the PC track only at specific **contracts**, not named PC
+milestone numbers (M4 is closed; the milestones that used to gate Strix
+no longer exist as such):
+
+- the `D1` renderer-queue contract (shape/backpressure of the async
+  codec worker, once proven),
+- the `D2` perception contract (whichever bounded-context or
+  cached-encode strategy is proven, with its exact runtime SHA frozen),
+- the `D3` live-timeline protocol (the actual continuous session
+  protocol, once built).
+
+Strix imports those exact contracts/runtime SHAs once each is stable,
+rather than independently inventing its own duplex VoiceChat runtime.
+No XDNA implementation, replacement-TTS integration, or current
+fallback optimization begins merely because the source study is
+underway.
 
 ## Explicitly out of scope for this document
 

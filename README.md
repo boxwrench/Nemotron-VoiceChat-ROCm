@@ -13,7 +13,7 @@ microphone -> Nemotron VoiceChat 11B Q8 on AMD -> spoken response
 | GPU | gfx target | Status |
 | --- | --- | --- |
 | AMD Radeon AI PRO R9700 | gfx1201 | VALIDATED -- reference, see [BENCHMARKS.md](docs/BENCHMARKS.md) |
-| AMD Radeon RX 7900 XT | gfx1100 | PENDING |
+| AMD Radeon RX 7900 XT | gfx1100 | PENDING (H1) |
 | AMD Strix Halo | gfx1151 | VALIDATED, known perception/CLIP CPU fallback; see [validation notes](research/hardware-validation/gfx1151/README.md) |
 
 R9700 warm speech-to-speech: mean 4.244 s, p95 4.264 s. Full results:
@@ -74,31 +74,34 @@ license.
 
 ## v0.1 release
 
-**v0.1 is push-to-talk: a persistent, multi-turn conversation with native
-Nemotron speech in and out, on a single AMD Radeon GPU running Linux +
-ROCm.** The terminal client (`app/push-to-talk/ptt_terminal.py`) is the
-reliable default interface; the global-hotkey Space-hold client
-(`ptt.py`) is available but has Wayland/input-permission constraints the
-terminal client doesn't.
+**v0.1.0 is shipped** (tagged `v0.1.0`): push-to-talk, a persistent,
+multi-turn conversation with native Nemotron speech in and out, on a
+single AMD Radeon GPU running Linux + ROCm. The terminal client
+(`app/push-to-talk/ptt_terminal.py`) is the reliable default interface;
+the global-hotkey Space-hold client (`ptt.py`) is available but has
+Wayland/input-permission constraints the terminal client doesn't.
 
 Explicitly not in v0.1: continuous/live duplex, barge-in, streaming PCM
 *during* generation, multi-GPU, replacement TTS, production tool calling,
 non-Linux audio backends. These were investigated as the M4 milestone
 (see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md)) and found to
-need real async/runtime engineering beyond a quick addition -- that work
-continues after this release, not before it.
+need real async/runtime engineering beyond a quick addition. M4 was not
+a failure to build duplex -- it turned a giant unknown problem into a
+map. That map is now the post-v0.1 program below.
 
-Separately, an opt-in **post-turn** streaming-playback path
+v0.1.0 also ships an opt-in **post-turn** streaming-playback path
 (`VC_TTS_STREAM_PLAYBACK=1`, see
-[app/push-to-talk/README.md](app/push-to-talk/README.md)) is available
-for this release's human validation round: assistant text still streams
-during generation as before, and once the response text finishes, native
-speech now starts playing as soon as the first already-available audio
-is decoded, rather than waiting for the complete response WAV to render.
-This is not speech streaming *during* generation, not duplex, and not
-barge-in -- it only closes the gap between the model finishing talking
-(in text) and the user hearing it. It remains opt-in, not the default,
-until a human validation pass confirms it's ready to ship on by default.
+[app/push-to-talk/README.md](app/push-to-talk/README.md)): assistant
+text still streams during generation as before, and once the response
+text finishes, native speech now starts playing as soon as the first
+already-available audio is decoded, rather than waiting for the
+complete response WAV to render (main-complete -> first-audio ~157ms
+measured, vs. several-to-tens-of-seconds before). This is not speech
+streaming *during* generation, not duplex, and not barge-in -- it only
+closes the gap between the model finishing talking (in text) and the
+user hearing it. It passed five live human validation turns and is
+integrated into the release's runtime pin; it remains opt-in (not the
+default) pending broader validation across more hardware/sessions.
 
 ### Known limitations
 
@@ -118,28 +121,75 @@ until a human validation pass confirms it's ready to ship on by default.
 
 ## Roadmap
 
+M1-M4 are historical and frozen. M1-M3 shipped what they set out to
+build; M4 absorbed what earlier planning called M4 (multi-turn state,
+already proven by M3), M5 (latency instrumentation), and M6
+(duplex/barge-in) into one milestone, since PTT already established
+multi-turn conversational state and the real goal was always the
+duplex/barge-in behavior. M4 did not ship duplex, but it was not a
+failure: it turned a giant unknown problem into a map -- perception's
+future-context dependence is negligible, its real cost is re-encoding
+growing history; the main-path GPU decode cost is real and unrecoverable
+while the function head was a genuine, promoted optimization; the causal
+codec and streaming ISTFT produce numerically correct incremental audio,
+but synchronous invocation is too expensive for an 80ms live frame. See
+[docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) for the full record.
+
+The forward program (D1-D7, H1-H2, F1, R2) replaces the old placeholder
+M7-M9 rows with the actual plan that map produced:
+
 | Milestone | Scope |
 | --- | --- |
 | M1 | R9700 Q8 reproducible baseline -- DONE |
-| M2 | gfx1100 validation -- in progress; gfx1151 -- DONE, see [validation notes](research/hardware-validation/gfx1151/README.md) |
-| M3 | push-to-talk client -- DONE, the v0.1 release interface |
-| M4 | native continuous duplex: always listening, incremental speech out, interruptible -- investigated and closed, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md); resumes after v0.1 |
-| F1 | Strix Halo program: behavior-first serving study now; later production-shaped gfx1151 parity and measured heterogeneous placement -- ACTIVE S3A/S3B/S3C, see [docs/STRIX-ROADMAP.md](docs/STRIX-ROADMAP.md) and [serving options](docs/STRIX-SERVING-OPTIONS.md) |
-| M7 | optimize bottlenecks from the actual interactive workload |
-| M8 | optional multi-GPU experiments |
-| M9 | public AMD VoiceChat release |
+| M2 | AMD hardware validation -- gfx1201 DONE, gfx1151 DONE (see [validation notes](research/hardware-validation/gfx1151/README.md)), gfx1100 PENDING (H1) |
+| M3 | Persistent push-to-talk product path -- DONE, v0.1.0 shipped |
+| M4 | Native duplex feasibility investigation -- DONE, produced perception, critical-path, and streaming-audio findings, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
+| D1 | Async native audio renderer -- **NEXT** |
+| D2 | Production continuous perception -- **NEXT** |
+| D3 | Continuous causal VoiceChat timeline -- blocked on D1 + D2 |
+| D4 | Native model turn-taking -- blocked on D3 |
+| D5 | User interruption / barge-in -- blocked on D4 |
+| D6 | Measured optimization / component substitution -- iterative across D1-D5, only where a real measurement demands it |
+| D7 | Long-session quality / stress / stability -- blocked on working duplex |
+| H1 | gfx1100 (RX 7900 XT) validation -- parallel / non-blocking |
+| H2 | Multi-GPU diagnostic ceiling (fix the known visibility crash, then a matched placement experiment) -- later, not before single-R9700 duplex work |
+| F1 | Strix Halo serving/XDNA program -- parallel, imports stable contracts from D1/D2/D3 as they land, see [docs/STRIX-ROADMAP.md](docs/STRIX-ROADMAP.md) and [serving options](docs/STRIX-SERVING-OPTIONS.md) |
+| R2 | Public fluent-duplex release -- end state |
 
-M4 absorbed what earlier planning called M4 (multi-turn state, already
-proven by M3), M5 (latency instrumentation), and M6 (duplex/barge-in) into
-one milestone, since PTT already established multi-turn conversational
-state and the real goal was always the duplex/barge-in behavior, not an
-intermediate step on the way there. M4 ran to a closed feasibility result
-(perception context resolved, real frame-budget bottlenecks decomposed, a
-GPU function-head optimization promoted, incremental audio proven
-numerically sound but not yet real-time-schedulable) without shipping
-duplex -- the decision was to ship v0.1 on what M3 already proved works,
-and continue M4's remaining leads (an async codec worker, or reducing the
-codec's graph node count) afterward.
+`D*` is deliberately new numbering rather than reusing M5-M9 for
+different things -- history stays understandable.
+
+**Why D1 first**: M4B already proved the codec's math (correct
+incremental PCM, correct streaming ISTFT) and its aggregate throughput
+(comfortably above realtime); the specific thing that failed was
+synchronous dispatch inside the live 80ms frame. D1 tests the next
+cheapest mechanism -- scheduling, via an async renderer worker feeding a
+PCM ring -- before reaching for codec kernel work, perception changes,
+or a second GPU. It's the highest-information next experiment: it tells
+us whether the existing native system is much closer to duplex than the
+synchronous measurements suggest, or whether same-GPU contention between
+the main model and the codec worker is itself the real ceiling.
+
+**D2's actual open question**: M4 already showed perception's
+*future*-context dependence is negligible (zero-lookahead is viable).
+The real problem is *past* context: a naive growing-prefix re-encode
+gets too expensive around 20-24s of conversation, and no bounded window
+tested so far has both adequate timing margin and reliable downstream
+fidelity. D2 is a bounded-context and/or cached-encode problem, not a
+"does it need the future" problem.
+
+**Dependency shape**:
+```
+v0.1.0 -----------> D1 (async renderer) --\
+                                            --> D3 (live timeline) -> D4 (turn-taking) -> D5 (barge-in) -> D7 (stability) -> R2
+M4 evidence -------> D2 (perception contract) --/
+```
+D6 is not a terminal stage -- it's fed continuously by measurements from
+D1 through D5, and only acts where a real measured deadline miss demands
+it, not because an optimization sounds attractive.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the north-star
+acceptance criteria and the track structure this program runs under.
 
 ## Documentation
 

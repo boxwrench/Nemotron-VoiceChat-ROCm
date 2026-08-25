@@ -243,7 +243,7 @@ conversation rather than a VAD -> ASR -> LLM -> TTS pipeline.
 
 ```text
 classification       KEEP control; current gfx1151 path includes CPU fallback
-reusable directly?    yes as the control path after PC M4A-2 is frozen
+reusable directly?    yes as the control path after PC `D2` is frozen
 hardware engine       gfx1151 plus CPU fallback in the current graph
 streaming capable?    zero-lookahead production shape is still a cost question
 stateful?             the current encoder graph has no useful cross-call state
@@ -251,7 +251,7 @@ latency class         critical 80 ms frame path; measure growing-prefix cost
 model/runtime         native VoiceChat FastConformer/mtmd graph
 Linux support         validated in the frozen Q8 turn-based workload
 integration boundary  learned perception embeddings into Nemotron
-obvious blocker       M4A-2 must establish a viable production-shaped path
+obvious blocker       PC `D2` must establish a viable production-shaped path
 ```
 
 `LEAD-GFX1151-0001` remains parked. Do not optimize its `CONV_2D_DW` or
@@ -265,11 +265,11 @@ reusable directly?    no; feasibility only
 hardware engine       XDNA2 NPU, possibly with CPU fallback
 streaming capable?    feasibility unknown on XDNA2; the currently selected
                       VoiceChat contract is zero-lookahead, with the
-                      production execution shape pending M4A-2
+                      production execution shape pending PC `D2`
 stateful?             current VoiceChat encoder has no useful cross-call
                       state; an XDNA implementation must reproduce the
-                      production-shaped perception contract selected after
-                      M4A-2 rather than inventing incompatible state semantics
+                      production-shaped perception contract selected by
+                      `D2` rather than inventing incompatible state semantics
 latency class         critical; must fit the 80 ms frame budget plus transfers
 model/runtime         likely ONNX/compiled XDNA graph or a FastFlowLM/IRON path
 Linux support         runtime stack exists; this exact graph is unproven
@@ -520,7 +520,7 @@ NOW
   S3B KEEP / RELOCATE / REPLACE role map
   S3C renderer and serving contracts
 
-PC completes M4A-2 and freezes production-shaped perception
+PC completes `D2` and freezes production-shaped perception
   ↓
 Strix builds the exact runtime SHA on gfx1151
   ↓
@@ -530,7 +530,7 @@ rank serving candidates
   ↓
 first bounded heterogeneous experiment
 
-PC M4B -> M4C -> M4D may continue in parallel
+PC `D1` / `D3` / `D4` / `D5` may continue in parallel
 ```
 
 The full `STRIX-DUPLEX-GPU-M1` baseline and later A/B/C system comparison are
@@ -548,8 +548,8 @@ but they are not prerequisites for this source study.
 - No mandatory Lemonade dependency.
 - No conventional VAD -> ASR -> LLM -> TTS rewrite without evidence that it is
   the better conversational system.
-- No requirement to wait for PC M4B/M4C/M4D or RX 7900 XT validation before
-  completing this study.
+- No requirement to wait for PC `D1`/`D3`/`D4`/`D5` (or `H1`, RX 7900 XT
+  validation) before completing this study.
 
 ## Sources checked
 
