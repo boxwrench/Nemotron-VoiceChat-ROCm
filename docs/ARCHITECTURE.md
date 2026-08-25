@@ -107,6 +107,26 @@ timeline protocol) are proven first. Strix and other hardware targets
 consume those contracts once stable, rather than each re-deriving their
 own VoiceChat duplex architecture independently.
 
+## Current D1/D2 contract status
+
+The reference track has now produced a qualified D1 renderer architecture:
+the producer publishes immutable TTS-frame snapshots to a worker-owned codec
+scheduler and bounded PCM ring. It is documented in
+[research/experiments/d1-async-renderer](../research/experiments/d1-async-renderer/README.md)
+and still needs R9700/GPU-contention and real playback-device qualification.
+
+D2 is not frozen. The current VoiceChat perception API rebuilds a
+variable-length whole-prefix graph for each `mtmd_encode_chunk()` call and
+does not expose persistent encoder state. The exact stateful decomposition,
+downstream fidelity, and long-session service curve remain the next reference
+experiment. See
+[research/experiments/d2-perception-state](../research/experiments/d2-perception-state/README.md).
+
+Strix must not choose a production XDNA input shape or cache topology from
+these research hypotheses. It wakes only when D2 supplies an exact runtime
+SHA and importable history/state contract, followed by the D3 live-timeline
+contract.
+
 ## Function/tool channel
 
 The tool-call channel is QUALIFIED, not blocking: the model selects and

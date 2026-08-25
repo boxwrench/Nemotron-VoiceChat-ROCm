@@ -144,8 +144,8 @@ M7-M9 rows with the actual plan that map produced:
 | M2 | AMD hardware validation -- gfx1201 DONE, gfx1151 DONE (see [validation notes](research/hardware-validation/gfx1151/README.md)), gfx1100 PENDING (H1) |
 | M3 | Persistent push-to-talk product path -- DONE, v0.1.0 shipped |
 | M4 | Native duplex feasibility investigation -- DONE, produced perception, critical-path, and streaming-audio findings, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
-| D1 | Async native audio renderer -- **NEXT** |
-| D2 | Production continuous perception -- **NEXT** |
+| D1 | Async native audio renderer -- **QUALIFIED prototype; GPU/ALSA host qualification pending** ([experiment](research/experiments/d1-async-renderer/README.md)) |
+| D2 | Production continuous perception -- **BLOCKED pending stateful encoder experiment** ([decision record](research/experiments/d2-perception-state/README.md)) |
 | D3 | Continuous causal VoiceChat timeline -- blocked on D1 + D2 |
 | D4 | Native model turn-taking -- blocked on D3 |
 | D5 | User interruption / barge-in -- blocked on D4 |
