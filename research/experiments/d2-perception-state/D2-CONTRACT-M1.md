@@ -1,6 +1,6 @@
 # D2-CONTRACT-M1: bounded VoiceChat encoder state
 
-Status: **encoder-state milestone PASS; production D2 QUALIFY**
+Status: **encoder-state milestone PASS; production D2 BLOCKED**
 
 This contract records the first real stateful VoiceChat perception result. It
 is intentionally an import boundary, not a claim that the complete live
@@ -78,10 +78,12 @@ VC03: mean 15.735 ms, p95 18.821 ms, p99 19.930 ms
 VC05: mean 57.153 ms, p95 131.981 ms, p99 200.366 ms
 ```
 
-VC05's tail is a single-run CPU-host outlier; it is retained as observed
-evidence, not treated as an algorithmic steady-state estimate. These are not
-the R9700 production curve and do not establish 80 ms deadline behavior on
-the reference GPU.
+VC05's tail is currently **UNKNOWN**, not explained away as a host outlier.
+The present comparison records whole-step timing but does not decompose the
+slow step into graph build, allocation, compute, copies, synchronization, and
+host scheduling. This accounting work is deferred by the earlier D2-S2
+frontend semantics blocker. These are not the R9700 production curve and do
+not establish 80 ms deadline behavior on the reference GPU.
 
 ## Deliberately open production fields
 
@@ -89,6 +91,8 @@ The prototype is fed the full-prefix graph's exact `pre_enc_out` oracle. The
 following are not yet frozen and are required before Strix wakes:
 
 ```text
+current per-feature normalization contract (the present contract is not
+    streamable with exact future-independent output)
 streaming waveform/pre-emphasis/STFT state
 streaming mel frame alignment
 causal subsampling boundary features and stride phase
@@ -98,5 +102,5 @@ R9700 mean/p95/p99 service curve versus session length
 ```
 
 This contract therefore proves bounded state for the encoder stack, while the
-production D2 contract remains **QUALIFY** pending exact frontend/subsampling
-parity and reference-host timing.
+production D2 contract remains **BLOCKED** pending an explicit normalization
+decision, exact frontend/subsampling parity, and reference-host timing.

@@ -115,13 +115,15 @@ scheduler and bounded PCM ring. It is documented in
 [research/experiments/d1-async-renderer](../research/experiments/d1-async-renderer/README.md)
 and still needs R9700/GPU-contention and real playback-device qualification.
 
-D2 has a qualified bounded-state encoder milestone, but the production
-contract is not frozen. The D2-S1 research path retains per-layer attention
+D2-S1 has a passing bounded-state encoder milestone, but the production
+contract is blocked. The D2-S1 research path retains per-layer attention
 K/V history and causal-convolution context, passes downstream token/function
 fidelity on VC01, VC03, and VC05, and plateaus at bounded state memory. It is
 currently fed the authoritative full-prefix `pre_enc_out` oracle; streaming
-waveform/mel and causal-subsampling state, plus the R9700 service curve, remain
-open. See
+waveform/mel and causal-subsampling state remain open, and D2-S2 found that
+the current per-feature mel normalization depends on the full supplied
+utterance. That normalization contract must be explicitly changed or
+relaxed before a live exact frontend can exist. See
 [research/experiments/d2-perception-state](../research/experiments/d2-perception-state/README.md).
 
 Strix must not choose a production XDNA input shape or cache topology from

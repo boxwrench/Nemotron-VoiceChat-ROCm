@@ -1,14 +1,16 @@
 # D2: production continuous perception state
 
-Status: **QUALIFY — bounded stateful encoder stack proven; production contract
-not yet frozen**.
+Status: **BLOCKED — D2-S1 encoder state passes; current frontend normalization
+has an unbounded future contributor domain**.
 
-The D2-S1 prototype now computes one new frame from finite retained state
-through all 24 VoiceChat encoder layers and preserves downstream VoiceChat
-behavior on the available fixtures. It begins at the authoritative full-prefix
-`pre_enc_out` oracle, however: streaming waveform→mel and causal subsampling
-state have not yet been integrated into the candidate. Therefore this is a
-real stateful-encoder milestone, not yet the importable production D2 path.
+The D2-S1 prototype computes one new frame from finite retained state through
+all 24 VoiceChat encoder layers and preserves downstream VoiceChat behavior on
+the available fixtures. D2-S2 then audited the missing waveform→mel and causal
+subsampling boundary using DEC contributor enumeration. The existing
+`norm_per_feature=true` frontend normalizes each mel feature over the entire
+supplied utterance, so exact normalized mel output has future contributors
+across the full session. This is a production-semantics blocker, not a missing
+implementation detail.
 
 ## Frozen evidence inherited from M4
 
@@ -169,13 +171,15 @@ VC03 mean 15.735 ms, p95 18.821 ms, p99 19.930 ms
 VC05 mean 57.153 ms, p95 131.981 ms, p99 200.366 ms
 ```
 
-VC05 includes a large single-run CPU-host outlier; it is preserved rather than
-discarded. This is not the R9700/GPU production curve and is not a D3
-readiness claim.
+VC05's tail is currently **UNKNOWN**, not explained away as a host outlier:
+the present instrumentation records whole-step timing but does not decompose
+the slow step into graph build, allocation, compute, copies, synchronization,
+and host scheduling. This is not the R9700/GPU production curve and is not a
+D3 readiness claim.
 
 ## D2-CONTRACT-M1: encoder-state import boundary
 
-This contract is frozen for the bounded encoder-stage result, with the
+This contract is frozen only for the bounded encoder-stage result, with the
 frontend boundary intentionally explicit:
 
 exact llama-voicechat.cpp SHA: exact runtime research commit in D2-CONTRACT-M1
@@ -200,18 +204,32 @@ static-shape strategy, and R9700 service/deadline curve. Strix must not treat
 the `[1024]` pre-encoder boundary as the final live audio API until those are
 closed.
 
+## D2-S2 decision
+
+The complete D2 path cannot currently be promoted without an explicit choice
+about the global per-feature normalization. See
+[D2-S2-FRONTEND-BLOCKER.md](D2-S2-FRONTEND-BLOCKER.md) and the contributor
+ledger for the exact source-derived frontier.
+
+```text
+local waveform/STFT frontier:  DERIVABLE before normalization
+causal subsampling frontier:  DERIVABLE by residue enumeration
+current normalized mel:        FULL SESSION contributor domain
+complete PCM→embedding path:   BLOCKED
+```
+
 ## Decision gate
 
 ```text
 D2-S1 bounded encoder state: PASS
-D2 production contract:     QUALIFY / not yet frozen
-XDNA impact:                 Strix still waits for the completed D2 contract
+D2 production contract:     BLOCKED by current frontend semantics
+XDNA impact:                 Strix still waits for a revised D2 contract
 ```
 
-The remaining blocker is a specific production-boundary gap, not missing ONNX,
-XDNA access, or an unsupported operator: prove exact streaming waveform→mel
-and causal subsampling maintenance, then measure the resulting full path on
-R9700.
+The remaining blocker is specifically the full-session contributor domain from
+per-feature normalization. It is not missing ONNX, XDNA access, or an
+unsupported operator. A causal/running normalization change would be a new
+model-behavior experiment, not an implementation cleanup.
 
 ## Wake-up information for Strix
 

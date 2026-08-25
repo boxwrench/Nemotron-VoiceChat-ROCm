@@ -145,7 +145,7 @@ M7-M9 rows with the actual plan that map produced:
 | M3 | Persistent push-to-talk product path -- DONE, v0.1.0 shipped |
 | M4 | Native duplex feasibility investigation -- DONE, produced perception, critical-path, and streaming-audio findings, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
 | D1 | Async native audio renderer -- **QUALIFIED prototype; GPU/ALSA host qualification pending** ([experiment](research/experiments/d1-async-renderer/README.md)) |
-| D2 | Production continuous perception -- **QUALIFIED bounded encoder-state milestone; frontend/subsampling and production GPU contract pending** ([decision record](research/experiments/d2-perception-state/README.md)) |
+| D2 | Production continuous perception -- **BLOCKED by full-session per-feature mel normalization; bounded encoder-state milestone passed** ([decision record](research/experiments/d2-perception-state/README.md)) |
 | D3 | Continuous causal VoiceChat timeline -- blocked on D1 + D2 |
 | D4 | Native model turn-taking -- blocked on D3 |
 | D5 | User interruption / barge-in -- blocked on D4 |
@@ -179,7 +179,10 @@ fidelity. D2 is a bounded-context and/or cached-encode problem, not a
 "does it need the future" problem. The first D2-S1 encoder-state prototype
 now passes downstream token/function fidelity with bounded memory; its live
 waveform frontend and causal subsampling boundary are still the production
-qualification work.
+qualification work. The D2-S2 contributor audit additionally found that the
+current conformer frontend's per-feature normalization depends on the entire
+supplied utterance, so the exact current normalized-mel contract is not
+streamable without an explicit semantic change.
 
 **Dependency shape**:
 ```
