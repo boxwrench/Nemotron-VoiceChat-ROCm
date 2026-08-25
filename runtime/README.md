@@ -8,12 +8,12 @@ by pinned commit -- never by a floating branch tip.
 Repository:          boxwrench/llama-voicechat.cpp
 Upstream chain:       ggml-org/llama.cpp -> sansamour/llama-voicechat.cpp -> boxwrench/llama-voicechat.cpp
 Integration branch:   amd/rocm
-Pinned known-good:    5e5b8628cf5db8e18b61fa8eb8a12fb80d68f79d
-                      "voicechat: stream post-turn speech playback"
+Pinned known-good:    09f4c7b4a414ae060a2325714e612dfd9c057811
+                      "voicechat: reconstruct post-turn streaming playback"
 ```
 
 Advanced from the prior pin (`a05335bb3`, "voicechat: run function head on
-GPU") to add post-turn streaming speech playback (M3.1): once the response
+GPU") to reconstruct post-turn streaming speech playback (M3.1): once the response
 text finishes, native speech now starts playing as soon as the first
 already-decoded audio is ready, via the existing causal codec decode and a
 previously-unused streaming ISTFT, rather than waiting for the complete
@@ -24,6 +24,10 @@ unmodified by this commit. Validated on real hardware: correlation 0.9999999
 against the reference complete-wav decode, zero playback underruns, no
 truncated final word, main-complete->first-audio ~157ms measured (vs.
 multi-second baseline), and five live human turns confirmed correct.
+
+This is a new public reconstruction from the frozen M4B/M3.1 evidence; it is
+not recovery of the former documented object. The previous documented M3.1
+pin (`5e5b8628cf5db8e18b61fa8eb8a12fb80d68f79d`) is unreachable/orphaned.
 
 The prior pin (`a05335bb37b4819e6802efe831cbbee3e584f50b`, "voicechat: run
 function head on GPU") was itself advanced from `38a76719e` ("voicechat:

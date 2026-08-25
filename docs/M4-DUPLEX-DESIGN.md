@@ -657,10 +657,13 @@ underway.
   from source reading, measurement, and uncommitted research-branch
   instrumentation. The exceptions are the GPU function-head change,
   committed on `perf/m4-function-head-gpu` (`a05335bb3`), and the M3.1
-  post-turn streaming-playback change built on top of it (`5e5b8628c`,
-  gated by `VC_TTS_STREAM_PLAYBACK=1`) -- both were promoted to the v0.1
-  release's runtime pin (see `runtime/README.md`); neither is merged
-  into `amd/rocm`, v0.1 pins the commit directly.
+  post-turn streaming-playback reconstruction built on top of it
+  (`09f4c7b4a`, gated by `VC_TTS_STREAM_PLAYBACK=1`) -- both were promoted
+  to the v0.1 release's runtime pin (see `runtime/README.md`). The former
+  documented M3.1 object (`5e5b8628c`) is unreachable/orphaned; the new
+  commit is a reconstruction, not recovery of that object. Neither is merged
+  the reconstructed commit is published on `amd/rocm`; v0.1 pins the
+  exact commit directly.
 - No merge decision on `feature/push-to-talk` was made by M4 itself --
   that reconciliation is part of the separate v0.1 release-prep work
   this closure hands off to.
