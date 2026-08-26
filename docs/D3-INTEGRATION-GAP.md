@@ -223,3 +223,8 @@ The next hardware attempt must run with an idle or explicitly coordinated GPU
 and must first prove the `ready` JSON handshake. It must not reuse this run for
 latency, renderer, or placement conclusions. The controlled replay harness is
 `research/scripts/harness/run_d3_live.py`.
+
+The subsequent handshake-recovery preflight found 0% instantaneous busy but
+the same unrelated ROCm process still retained substantial gfx1151 memory.
+No retry was launched; an idle/coordinate device-owner gate is required before
+the `ready` probe.
