@@ -144,9 +144,9 @@ M7-M9 rows with the actual plan that map produced:
 | M2 | AMD hardware validation -- gfx1201 DONE, gfx1151 DONE (see [validation notes](research/hardware-validation/gfx1151/README.md)), gfx1100 PENDING (H1) |
 | M3 | Persistent push-to-talk product path -- DONE, v0.1.0 shipped |
 | M4 | Native duplex feasibility investigation -- DONE, produced perception, critical-path, and streaming-audio findings, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
-| D1 | Async native audio renderer -- **NEXT** |
-| D2 | Production continuous perception -- **NEXT** |
-| D3 | Continuous causal VoiceChat timeline -- blocked on D1 + D2 |
+| D1 | Async native audio renderer -- **RESEARCH QUALIFIED**; implementation boundary exists at runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2`, but real ALSA/live-timeline integration remains open |
+| D2 | Bounded-state perception -- **RESEARCH QUALIFIED**; stateful encoder and bounded frontend probe exist at runtime `6da91b8c6e5035110721dd3319f0511376d7487c`, but the normal production encode path remains untouched |
+| D3 | Continuous causal VoiceChat timeline -- **ACTIVE**; no longer architecturally blocked, now responsible for integrating/qualifying the D1 and D2 contracts |
 | D4 | Native model turn-taking -- blocked on D3 |
 | D5 | User interruption / barge-in -- blocked on D4 |
 | D6 | Measured optimization / component substitution -- iterative across D1-D5, only where a real measurement demands it |
@@ -158,6 +158,14 @@ M7-M9 rows with the actual plan that map produced:
 
 `D*` is deliberately new numbering rather than reusing M5-M9 for
 different things -- history stays understandable.
+
+**D1/D2/D3 reconciliation (2026-08-25)**: D1 and D2 are no longer merely
+future investigations. Their research branches contain qualified mechanisms,
+but neither mechanism is merged into the release runtime or connected to the
+push-to-talk path. D3 is therefore unblocked for implementation, not declared
+product-ready: its first job is to make the ownership, bounded queues,
+causality, and telemetry contracts real. See
+[docs/D3-INTEGRATION-GAP.md](docs/D3-INTEGRATION-GAP.md).
 
 **Why D1 first**: M4B already proved the codec's math (correct
 incremental PCM, correct streaming ISTFT) and its aggregate throughput

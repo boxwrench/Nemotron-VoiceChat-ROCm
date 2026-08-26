@@ -63,10 +63,11 @@ and found: perception's *future*-context dependence is negligible
 (zero-lookahead is viable), but a naive growing-prefix re-encode of the
 *past* gets too expensive above roughly 20-24s of conversation, and no
 bounded historical window tested so far has both adequate timing margin
-and reliable downstream fidelity. That is now a live open question (D2
-in the roadmap), not a closed one -- do not reopen FastConformer
-optimization from the stale baseline number, but do not treat perception
-as settled either.
+and reliable downstream fidelity. Later D2 work superseded that dead end
+with a bounded encoder-state mechanism and a no-normalization frontend
+probe. Those mechanisms are research-qualified, not yet the normal mtmd
+encode path; their production integration is D3 work. Do not reopen the old
+window sweep or treat the historical whole-prefix timing as the D2 control.
 
 ## North star and track structure (post-v0.1)
 
@@ -106,6 +107,21 @@ new contracts (renderer queue shape, perception context strategy, live
 timeline protocol) are proven first. Strix and other hardware targets
 consume those contracts once stable, rather than each re-deriving their
 own VoiceChat duplex architecture independently.
+
+## D3 integration boundary
+
+`D3` is active. The qualified D1 renderer and D2 perception mechanisms have
+not yet entered the release runtime, so D3 is both an integration and a
+production-qualification phase. Its first slice has one non-negotiable rule:
+
+> One captured 80 ms microphone slice authorizes exactly one VoiceChat
+> timeline step. The timeline never runs ahead of captured microphone audio,
+> except for explicit tool/system frames.
+
+The detailed gap map, ownership model, telemetry contract, and first-slice
+scope are in [D3-INTEGRATION-GAP.md](D3-INTEGRATION-GAP.md). D4 turn-taking,
+D5 interruption, custom XDNA, multi-GPU, and component optimization remain
+outside this first D3 slice.
 
 ## Function/tool channel
 
