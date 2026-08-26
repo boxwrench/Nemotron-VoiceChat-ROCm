@@ -57,6 +57,11 @@ def main() -> int:
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--report", type=Path)
     ap.add_argument(
+        "--single-output",
+        action="store_true",
+        help="Expose only the final MatMul result. Required for the first provider-assignment probe.",
+    )
+    ap.add_argument(
         "--activation-scale-storage",
         choices=("f16", "f32"),
         default="f16",
@@ -99,23 +104,36 @@ def main() -> int:
     n("Mul", ["weights_scale", "act_scale_row"], "block_scale", "block_scale_product")
     n("Mul", ["dot_f32", "block_scale"], "scaled_blocks", "scale_blocks")
     n("ReduceSum", ["scaled_blocks"], "output", "accumulate_blocks", axes=[2], keepdims=0)
-    graph = helper.make_graph(nodes, "VOICECHAT_EXACT_Q8_0_MATMUL", [helper.make_tensor_value_info("activation", TensorProto.FLOAT, [1, width])], [
+    outputs = [
         helper.make_tensor_value_info("act_scale_f32", TensorProto.FLOAT, [1, blocks, 1]),
         helper.make_tensor_value_info("act_scale_stored", TensorProto.FLOAT, [1, blocks, 1]),
         helper.make_tensor_value_info("act_q", TensorProto.INT32, [1, blocks, QK]),
         helper.make_tensor_value_info("products", TensorProto.INT32, [1, rows, blocks, QK]),
         helper.make_tensor_value_info("dot_i32", TensorProto.INT32, [1, rows, blocks]),
         helper.make_tensor_value_info("output", TensorProto.FLOAT, [1, rows]),
-    ], initializer=inits)
+    ]
+    if args.single_output:
+        outputs = outputs[-1:]
+    graph = helper.make_graph(
+        nodes,
+        "VOICECHAT_EXACT_Q8_0_MATMUL",
+        [helper.make_tensor_value_info("activation", TensorProto.FLOAT, [1, width])],
+        outputs,
+        initializer=inits,
+    )
     model = helper.make_model(graph, producer_name="Nemotron-VoiceChat-ROCm", opset_imports=[helper.make_opsetid("", 12)])
+    # Ryzen AI 1.7.1's bundled ONNX Runtime accepts model IR <= 11.  This is
+    # a serialization compatibility boundary only: the graph remains opset 12
+    # and the arithmetic topology is unchanged.
+    model.ir_version = 11
     checker.check_model(model)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     onnx.save(model, args.output)
     activation = np.fromfile(args.activation, dtype="<f4").reshape(1, width)
     reference = np.fromfile(args.reference, dtype="<f4").reshape(1, rows)
     session = ort.InferenceSession(str(args.output), providers=["CPUExecutionProvider"])
-    result = session.run(None, {"activation": activation})[-1]
-    report = {"nodes": len(nodes), "opset": 12, "providers": session.get_providers(), "q8_contract": "explicit 32-element blocks / runtime A8 from F32 amax / I32 dot / F16-derived scales", "activation_scale_storage": args.activation_scale_storage, "parity": metric(reference, result)}
+    result = session.run(["output"], {"activation": activation})[0]
+    report = {"nodes": len(nodes), "opset": 12, "providers": session.get_providers(), "single_output": args.single_output, "q8_contract": "explicit 32-element blocks / runtime A8 from F32 amax / I32 dot / F16-derived scales", "activation_scale_storage": args.activation_scale_storage, "parity": metric(reference, result)}
     if report["parity"]["max_abs"] < 2e-4:
         report["classification"] = "EXACT_Q8_ONNX_PRIMITIVE_PASS"
     elif report["parity"]["max_abs"] < 1e-2:
