@@ -205,3 +205,21 @@ D3 product acceptance: OPEN
 ```
 
 The next result is an end-to-end D3-0 causal-timeline run, not D4/D5 work.
+
+## D3-HW initial host attempt (2026-08-26)
+
+Classification: **D3_RUNTIME_INTEGRATION_BLOCK**. This is not a causality,
+perception, renderer, or XDNA result.
+
+The D3 runtime at `b4692dee6b765b21419899137af291ed05bfdefb` built for
+`gfx1151` against `/opt/rocm-7.2.2`; the ordinary host namespace exposed
+`/dev/kfd` and `/dev/dri/renderD128`. The controlled VC01 80 ms replay did
+not reach its `ready` event, so it authorized **zero** live timeline frames.
+During startup, an unrelated host `llama-server` already held the GPU at
+approximately 94% busy. The D3 process was blocked on its stdout pipe before
+the JSON serve handshake completed.
+
+The next hardware attempt must run with an idle or explicitly coordinated GPU
+and must first prove the `ready` JSON handshake. It must not reuse this run for
+latency, renderer, or placement conclusions. The controlled replay harness is
+`research/scripts/harness/run_d3_live.py`.
