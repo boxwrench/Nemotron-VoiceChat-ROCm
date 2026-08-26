@@ -1,6 +1,8 @@
 generated/
 host-results/
 .venv/
+public-ryzenai-1.7.1/
+provider-cache/
 __pycache__/
 *.pyc
 *.onnx

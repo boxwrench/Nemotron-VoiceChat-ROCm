@@ -1,9 +1,16 @@
 # S9 isolated Ryzen AI provider provisioning
 
-Status: **BLOCKED — AMD account/EULA archive access required**
+Status: **SUPERSEDED AS THE ONLY RECOVERY PATH**
 
-S9 needs AMD Ryzen AI Software 1.7.1 for Linux as a separate userspace
-environment. AMD documents the archive name as `ryzen_ai-1.7.1.tgz` and its
+S10 established that AMD's public 1.7.1 Linux wheel index can reconstruct the
+provider userspace in an isolated CPython 3.12 environment. See
+[`S10-PUBLIC-PROVIDER-RECOVERY.md`](S10-PUBLIC-PROVIDER-RECOVERY.md) and
+`provision_public_ryzenai_1_7_1.sh`. The archive route below remains a valid
+AMD-supported convenience path, but account/EULA access is no longer the sole
+blocker for provider qualification.
+
+S9 originally assumed AMD Ryzen AI Software 1.7.1 for Linux was available only
+through a separate archive. AMD documents the archive name as `ryzen_ai-1.7.1.tgz` and its
 Linux installer as `install_ryzen_ai.sh -a yes -p <target>/venv`. The release's
 documented XRT version is 2.21.75, matching the existing host stack.
 
@@ -44,9 +51,11 @@ then the first executable gate, before any VoiceChat graph.
 
 ```text
 Q8_XDNA_CANDIDATE           retained from S7
-VitisAI provider status     not provisioned
+VitisAI provider status     public userspace reconstruction available; session
+                            creation and assignment still not tested
 XDNA provider execution     not tested
-S9 decision                 BLOCKED by AMD archive authentication/access
+S9 decision                 archive access no longer blocks provider setup;
+                            host provider qualification remains pending
 ```
 
 This is not an XDNA hardware failure, generic-provider compiler rejection, or
@@ -58,8 +67,9 @@ VoiceChat representation result.
 strongest lead: unchanged — exact-Q8 provider assignment remains the next gate
 strongest suppression: do not infer arbitrary-graph provider capability from
   the separately proven FLM model-specific NPU path
-compiler/backend asymmetry: not measured; the provider package is unavailable
-validation lesson: archive access/provisioning is a separate prerequisite from
-  hardware and application-runtime proof
+compiler/backend asymmetry: not measured; public provider import does not
+  establish graph assignment or execution
+validation lesson: package-index availability, provider import, and compiler
+  assignment are distinct prerequisites from hardware and application-runtime proof
 taxonomy gap: none added; this is environment availability, not DEC_CORE
 ```
