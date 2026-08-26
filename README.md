@@ -146,7 +146,7 @@ M7-M9 rows with the actual plan that map produced:
 | M4 | Native duplex feasibility investigation -- DONE, produced perception, critical-path, and streaming-audio findings, see [docs/M4-DUPLEX-DESIGN.md](docs/M4-DUPLEX-DESIGN.md) |
 | D1 | Async native audio renderer -- **RESEARCH QUALIFIED**; implementation boundary exists at runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2`, but real ALSA/live-timeline integration remains open |
 | D2 | Bounded-state perception -- **RESEARCH QUALIFIED**; stateful encoder and bounded frontend probe exist at runtime `6da91b8c6e5035110721dd3319f0511376d7487c`, but the normal production encode path remains untouched |
-| D3 | Continuous causal VoiceChat timeline -- **ACTIVE**; no longer architecturally blocked, now responsible for integrating/qualifying the D1 and D2 contracts |
+| D3 | Continuous causal VoiceChat timeline -- **ACTIVE / hardware causality PASS**; one gfx1151 80 ms slice authorized exactly one persistent D2/main step, but the first integrated frame was 146.157 ms and is not deadline-stable yet |
 | D4 | Native model turn-taking -- blocked on D3 |
 | D5 | User interruption / barge-in -- blocked on D4 |
 | D6 | Measured optimization / component substitution -- iterative across D1-D5, only where a real measurement demands it |

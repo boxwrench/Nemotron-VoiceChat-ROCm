@@ -38,6 +38,8 @@ def main() -> int:
     ap.add_argument("--events", required=True)
     ap.add_argument("--alsa", action="store_true")
     ap.add_argument("--ngl", default="99")
+    ap.add_argument("--max-frames", type=int, default=None,
+                    help="send at most this many 80 ms slices (0 exercises live_start only)")
     args = ap.parse_args()
 
     samples = pcm_f32(args.wav)
@@ -45,8 +47,14 @@ def main() -> int:
     samples = samples[: len(samples) // SLICE * SLICE]
     cmd = [args.binary, "-m", args.model, "--mmproj", args.mmproj,
            "--tts", args.tts, "-ngl", args.ngl, "--serve"]
+    # Runtime/model loading is verbose. Keeping stderr in a pipe can fill it
+    # before the JSON `ready` event arrives and deadlock the harness. Retain
+    # diagnostics in a sibling artifact without putting them on the handshake
+    # path.
+    stderr_path = args.events + ".stderr.txt"
+    stderr_file = open(stderr_path, "w", encoding="utf-8")
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, text=True, bufsize=1)
+                            stderr=stderr_file, text=True, bufsize=1)
     assert proc.stdin and proc.stdout
     events = []
 
@@ -63,6 +71,8 @@ def main() -> int:
 
     capture0 = time.monotonic_ns() // 1000
     for index in range(0, len(samples), SLICE):
+        if args.max_frames is not None and index // SLICE >= args.max_frames:
+            break
         capture_us = capture0 + (index // SLICE) * 80_000
         send({"cmd": "live_frame", "capture_us": capture_us,
               "pcm_f32": samples[index:index + SLICE].tolist()})
@@ -71,13 +81,11 @@ def main() -> int:
     send({"cmd": "quit"})
     events.append(json.loads(proc.stdout.readline()))
     proc.stdin.close()
-    stderr = proc.stderr.read()
     rc = proc.wait()
+    stderr_file.close()
     with open(args.events, "w", encoding="utf-8") as handle:
         for event in events:
             handle.write(json.dumps(event) + "\n")
-    with open(args.events + ".stderr.txt", "w", encoding="utf-8") as handle:
-        handle.write(stderr)
     if rc:
         raise RuntimeError(f"voicechat exited {rc}; see {args.events}.stderr.txt")
     return 0
