@@ -270,3 +270,9 @@ Classification: **D3_COMBINED_SERVICE_BLOCK**. Neither steady perception nor
 the main step independently exceeded 80 ms, but their combined p95 did. This
 does not yet reopen the custom-XDNA economic hold: renderer, ALSA, real capture
 backlog, and full duplex scheduler interaction are still unmeasured.
+
+The first D6 control used the existing `VC_FHEAD_GPU=1` option with the same
+renderer/TTS-off 37-frame sequence. It preserved exact frame authorization but
+logged `VC_FHEAD_GPU set but no GPU backend device found, staying on cpu`.
+That is **D6_FHEAD_GPU_NO_MECHANISM**, not a GPU-head performance or fidelity
+result. The next decision must not infer a speedup from its CPU-fallback timing.
