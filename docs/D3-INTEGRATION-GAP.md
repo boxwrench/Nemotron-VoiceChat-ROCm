@@ -281,5 +281,12 @@ Runtime `7a8ab71e8f5a5e981096f1ca83783dd47c92477e` makes the narrow portable
 discovery correction: try `IGPU` after `GPU`, matching ggml's generic backend
 preference. One-slice CPU/GPU probes on gfx1151 then emitted the same function
 token (12), while the GPU probe reported `function_head_gpu:true` and mirrored
-the head to `ROCm0`. This is activation/parity proof only; no new service curve
-or renderer result has been run.
+the head to `ROCm0`. The one-slice probe is activation/parity proof only.
+
+The subsequent renderer/TTS-off 37-frame curve kept exact function-token
+parity (all 37 tokens were 12) and active GPU-head telemetry. It reduced main
+p50/p95 from 52.315/62.932 ms to 47.419/48.296 ms and reduced misses from 8 to
+3, but perception p95 rose to 47.174 ms and total p95 remained 94.329 ms.
+Thus the correct D6 result is **D6_FHEAD_GPU_CORRECT_BUT_INSUFFICIENT**: main
+placement is valid, but a new perception-tail mechanism must be attributed
+before another intervention. Renderer and XDNA remain out of scope.
