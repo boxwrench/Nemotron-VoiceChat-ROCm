@@ -24,7 +24,7 @@ it does not rewrite an old result as if it had already shipped.
 | D1 async renderer | QUALIFIED | runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2` | no | no real ALSA/live-timeline qualification | no | real sink, contention, bounded lifecycle in D3 |
 | D2 bounded encoder state | QUALIFIED | runtime `6da91b8c6e5035110721dd3319f0511376d7487c` | no | research fidelity/probe evidence only | no | persistent frontend/preencoder API and matched service curve |
 | Strix XDNA perception | ECONOMIC_HOLD | probes only | no | XDNA host/LLM/speech, not VoiceChat perception | no | D2 + duplex placement economics |
-| D3 live causal timeline | active | runtime `7a8ab71e8f5a5e981096f1ca83783dd47c92477e` | research serve path only | gfx1151 causality PASS; renderer/TTS-off service has perception-heavy preencoder-compute tails | no | preencoder-only effect-domain qualification, renderer qualification, live capture client |
+| D3 live causal timeline | active | runtime research branch | research serve path only | gfx1151 causality PASS; renderer/TTS-off effect-boundary cut reaches 65.093 ms p95 with no VC01 steady-state misses | no | renderer/ALSA qualification, live capture client, broader workload qualification |
 
 The stale README rows that called D1/D2 “NEXT” and D3 “blocked” were accurate
 before the two research branches existed. D3 is **not architecturally
@@ -290,3 +290,59 @@ p50/p95 from 52.315/62.932 ms to 47.419/48.296 ms and reduced misses from 8 to
 Thus the correct D6 result is **D6_FHEAD_GPU_CORRECT_BUT_INSUFFICIENT**: main
 placement is valid, but a new perception-tail mechanism must be attributed
 before another intervention. Renderer and XDNA remain out of scope.
+
+## D6 / C10 preencoder effect-boundary cut — promoted
+
+Runtime instrumentation based on `722e22a0aae1dd5cff4fee8e5c81aaddc6086bc3`
+now provides two graph extents for the same D3 preencoder request:
+
+```text
+control:  complete VoiceChat projector graph -> pre_enc_out
+cut:      causal preencoder graph -> pre_enc_out
+```
+
+The cut changes graph extent only. It leaves the D2 one-frame bounded encoder,
+its K/V and convolution state, the main timeline, GPU function head, precision,
+and scheduling unchanged. The full graph remains the control path.
+
+The excluded 24-layer encoder/projection cannot contribute to `pre_enc_out`:
+the cut ends after the causal subsampler/linear preencoder output. The actual
+state required by later frames is owned by the separate bounded D2 encoder step;
+it is not updated by the generic full-prefix graph. This was verified rather
+than assumed: in consecutive full-versus-cut runs, every `d3_state_hash` and
+`d3_embedding_hash` matched exactly.
+
+Eight-frame parity (including startup) established all of:
+
+```text
+pre_enc_out:     bitwise equal on 8 / 8 frames
+timeline ids:    identical 0..7
+function tokens: identical (12 on every frame)
+D2 state hashes: identical
+embedding hashes: identical
+state bytes:     identical
+```
+
+The matched 37-slice renderer/TTS-off VC01 curve retained those exact timeline,
+function-token, state, and embedding results on every frame. Excluding cold
+frame 0:
+
+| Metric | Full graph control | Preencoder-only cut | Change |
+| --- | ---: | ---: | ---: |
+| preencoder graph nodes | 1,925 | 42 | -1,883 (-97.8%) |
+| preencoder compute p50 / p95 | 11.694 / 19.190 ms | 1.661 / 3.199 ms | -10.033 / -15.991 ms |
+| perception p50 / p95 | 24.679 / 29.680 ms | 13.884 / 18.315 ms | -10.795 / -11.365 ms |
+| main p50 / p95 | 47.501 / 48.055 ms | 47.448 / 48.261 ms | unchanged within run variation |
+| total p50 / p95 | 72.104 / 79.026 ms | 61.510 / 65.093 ms | -10.594 / -13.933 ms |
+| deadline misses | 1 / 36 | 0 / 36 | recovered |
+| timeline backlog peak | 0 | 0 | unchanged |
+
+The control's one steady miss was frame 4 (80.576 ms, 20.955 ms preencoder
+compute). The cut's largest steady frame was 67.193 ms; its residual
+preencoder-compute maximum was 6.222 ms. This is a direct effect-boundary
+mechanism result, not a graph-build/allocation or placement claim.
+
+Classification: **D6_DEC_PREENC_PROMOTE**. The D3 renderer/TTS-off causal
+service curve now has useful margin for this fixed VC01 control. Renderer,
+ALSA, live capture, and broader workload qualification remain separate gates;
+this result does not authorize D4, XDNA, or a stacked optimization.
