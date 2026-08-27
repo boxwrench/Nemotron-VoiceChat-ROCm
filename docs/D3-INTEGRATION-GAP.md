@@ -24,7 +24,7 @@ it does not rewrite an old result as if it had already shipped.
 | D1 async renderer | QUALIFIED | runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2` | no | no real ALSA/live-timeline qualification | no | real sink, contention, bounded lifecycle in D3 |
 | D2 bounded encoder state | QUALIFIED | runtime `6da91b8c6e5035110721dd3319f0511376d7487c` | no | research fidelity/probe evidence only | no | persistent frontend/preencoder API and matched service curve |
 | Strix XDNA perception | ECONOMIC_HOLD | probes only | no | XDNA host/LLM/speech, not VoiceChat perception | no | D2 + duplex placement economics |
-| D3 live causal timeline | active | runtime `11b808ec73aa331f06e6ce357eaa18dcbb00b959` | research serve path only | gfx1151 causality PASS; renderer/TTS-off VC01 steady total p95 88.590 ms | no | measurement-led combined-service attribution, renderer qualification, live capture client |
+| D3 live causal timeline | active | runtime `7a8ab71e8f5a5e981096f1ca83783dd47c92477e` | research serve path only | gfx1151 causality PASS; renderer/TTS-off service has perception-heavy preencoder-compute tails | no | preencoder-only effect-domain qualification, renderer qualification, live capture client |
 
 The stale README rows that called D1/D2 “NEXT” and D3 “blocked” were accurate
 before the two research branches existed. D3 is **not architecturally

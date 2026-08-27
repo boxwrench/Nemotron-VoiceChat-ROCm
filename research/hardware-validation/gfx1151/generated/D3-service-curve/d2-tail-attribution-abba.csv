@@ -1,0 +1,5 @@
+run,function_head_gpu,steady_frames,perception_p50_ms,perception_p95_ms,perception_max_ms,main_p50_ms,main_p95_ms,total_p50_ms,total_p95_ms,total_max_ms,deadline_misses
+cpu-a,false,36,24.421,32.495,32.889,51.235,58.653,75.912,88.782,95.319,6
+gpu-a,true,36,24.547,38.460,49.219,47.464,48.404,72.066,86.025,96.816,5
+gpu-b,true,36,24.145,44.310,46.038,47.493,48.131,71.817,91.268,93.745,4
+cpu-b,false,36,24.337,31.350,31.489,50.689,52.904,75.236,82.122,82.483,2
