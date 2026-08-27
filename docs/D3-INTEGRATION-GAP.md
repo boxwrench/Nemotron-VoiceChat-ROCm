@@ -21,7 +21,7 @@ it does not rewrite an old result as if it had already shipped.
 | Item | Research | Implemented | Integrated | Hardware validated | Product ready | Remaining gate |
 | --- | --- | --- | --- | --- | --- | --- |
 | M3 persistent PTT | complete | yes | yes | R9700/gfx1151 turn path | yes for PTT | not live duplex |
-| D1 async renderer | QUALIFIED | runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2` | no | no real ALSA/live-timeline qualification | no | real sink, contention, bounded lifecycle in D3 |
+| D1 async renderer | QUALIFIED | runtime research branch | D3 research path | gfx1151 real ALSA playback and semantic parity PASS; D3 deadline coexistence BLOCKED | no | remove native-TTS main-path cost, then requalify renderer contention, drain, and cancellation |
 | D2 bounded encoder state | QUALIFIED | runtime `6da91b8c6e5035110721dd3319f0511376d7487c` | no | research fidelity/probe evidence only | no | persistent frontend/preencoder API and matched service curve |
 | Strix XDNA perception | ECONOMIC_HOLD | probes only | no | XDNA host/LLM/speech, not VoiceChat perception | no | D2 + duplex placement economics |
 | D3 live causal timeline | active | runtime research branch | research serve path only | gfx1151 causality PASS; renderer/TTS-off effect-boundary cut reaches 65.093 ms p95 with no VC01 steady-state misses | no | renderer/ALSA qualification, live capture client, broader workload qualification |
@@ -54,8 +54,17 @@ actual underrun, drain, settle, and cancellation latency on hardware
 continuous-session lifecycle rather than one completed turn
 ```
 
-D1 is a runtime-quality queue mechanism needing live wiring and
-qualification, not a finished renderer product.
+The first D3 integration did exercise the real default ALSA sink and emitted
+`playback_begin`, but it is **D3_D1_RENDERER_CONTENTION_BLOCK**: native TTS
+already misses the 80 ms frame deadline when renderer-off, and enabling the
+worker raises main-path tails further. The test preserved every causal timeline,
+function-token, D2-state, and embedding hash. It did not reach a natural turn
+drain/cancellation lifecycle, so those gates remain open.
+
+D1 is a runtime-quality queue mechanism needing live qualification, not a
+finished renderer product. The result is not an ALSA failure and does not yet
+identify the added ON-path cost as GPU contention, CPU scheduling, or ALSA
+write blocking.
 
 ## D2: contribution and open gates
 

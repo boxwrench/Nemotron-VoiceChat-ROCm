@@ -72,13 +72,26 @@ def main() -> int:
         proc.stdin.write(json.dumps(obj, separators=(",", ":")) + "\n")
         proc.stdin.flush()
 
-    ready = json.loads(proc.stdout.readline())
-    events.append(ready)
-    if ready.get("kind") != "ready":
-        raise RuntimeError(f"expected ready, got {ready}")
+    def receive(expected: set[str]) -> dict:
+        """Return the next protocol reply while preserving async events.
+
+        The D1 renderer may emit `playback_begin` between a live-frame command
+        and its `d3_frame` reply.  Those events are part of the evidence, not
+        a response to a later command.
+        """
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                raise RuntimeError(f"voicechat closed stdout while waiting for {sorted(expected)}")
+            event = json.loads(line)
+            events.append(event)
+            if event.get("kind") in expected:
+                return event
+
+    ready = receive({"ready"})
     send({"cmd": "live_start", "alsa": args.alsa,
           "renderer": not args.no_renderer, "tts": not args.no_tts})
-    events.append(json.loads(proc.stdout.readline()))
+    receive({"d3_live_start"})
 
     capture0 = time.monotonic_ns() // 1000
     for index in range(0, len(samples), SLICE):
@@ -87,10 +100,10 @@ def main() -> int:
         capture_us = capture0 + (index // SLICE) * 80_000
         send({"cmd": "live_frame", "capture_us": capture_us,
               "pcm_f32": samples[index:index + SLICE].tolist()})
-        events.append(json.loads(proc.stdout.readline()))
+        receive({"d3_frame", "d3_frame_wait"})
 
     send({"cmd": "quit"})
-    events.append(json.loads(proc.stdout.readline()))
+    receive({"bye"})
     proc.stdin.close()
     rc = proc.wait()
     stderr_file.close()

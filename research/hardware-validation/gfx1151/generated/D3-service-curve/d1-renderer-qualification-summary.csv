@@ -1,0 +1,6 @@
+configuration,perception_p50_ms,perception_p95_ms,perception_max_ms,main_p50_ms,main_p95_ms,main_max_ms,total_p50_ms,total_p95_ms,total_max_ms,steady_deadline_misses,steady_frames,tts_publishes,pcm_high_water_samples,playback_begin,terminal_bye
+tts_off_renderer_off_control_a,14.348,31.159,37.533,47.495,48.511,50.943,62.047,78.417,84.883,2,36,0,0,0,1
+tts_off_renderer_off_control_b,14.479,18.216,35.700,47.505,48.436,51.038,62.098,66.363,83.231,1,36,0,0,0,1
+tts_on_renderer_off,14.151,17.142,37.080,79.626,87.176,115.377,93.846,102.864,152.457,36,36,0,0,0,1
+tts_on_renderer_alsa_on_a,17.807,26.924,29.170,116.288,179.387,191.180,135.173,197.937,207.659,36,36,36,3528,1,0
+tts_on_renderer_alsa_on_b,18.663,41.822,45.809,108.019,174.322,448.859,128.314,198.252,467.217,36,36,36,3528,1,1
