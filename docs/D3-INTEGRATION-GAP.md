@@ -21,7 +21,7 @@ it does not rewrite an old result as if it had already shipped.
 | Item | Research | Implemented | Integrated | Hardware validated | Product ready | Remaining gate |
 | --- | --- | --- | --- | --- | --- | --- |
 | M3 persistent PTT | complete | yes | yes | R9700/gfx1151 turn path | yes for PTT | not live duplex |
-| D1 async renderer | QUALIFIED | runtime research branch | D3 research path | gfx1151 real ALSA playback and semantic parity PASS; D3 deadline coexistence BLOCKED | no | remove native-TTS main-path cost, then requalify renderer contention, drain, and cancellation |
+| D1 async renderer | QUALIFIED | runtime research branch | D3 research path | gfx1151 real ALSA playback and semantic parity PASS; D3 deadline coexistence BLOCKED | no | move native-TTS generator work off the D3 main path through a new ordered state-ownership contract, then requalify renderer contention, drain, and cancellation |
 | D2 bounded encoder state | QUALIFIED | runtime `6da91b8c6e5035110721dd3319f0511376d7487c` | no | research fidelity/probe evidence only | no | persistent frontend/preencoder API and matched service curve |
 | Strix XDNA perception | ECONOMIC_HOLD | probes only | no | XDNA host/LLM/speech, not VoiceChat perception | no | D2 + duplex placement economics |
 | D3 live causal timeline | active | runtime research branch | research serve path only | gfx1151 causality PASS; renderer/TTS-off effect-boundary cut reaches 65.093 ms p95 with no VC01 steady-state misses | no | renderer/ALSA qualification, live capture client, broader workload qualification |
@@ -65,6 +65,36 @@ D1 is a runtime-quality queue mechanism needing live qualification, not a
 finished renderer product. The result is not an ALSA failure and does not yet
 identify the added ON-path cost as GPU contention, CPU scheduling, or ALSA
 write blocking.
+
+## Native TTS main-path attribution (2026-08-26)
+
+The renderer is not the first synchronous speech blocker. The matched
+renderer/ALSA-off attribution at runtime
+`025259170fd7d243a2009f3204396f6b49636e15` isolates native TTS itself:
+
+```text
+TTS off: main p50/p95 47.516 / 48.229 ms (control A)
+TTS on:  main p50/p95 79.935 / 85.797 ms (ON A)
+
+TTS on:  main p50/p95 81.502 / 85.801 ms (ON B)
+TTS off: main p50/p95 47.499 / 48.106 ms (control B)
+```
+
+Both ON runs miss all 36 steady 80 ms deadlines. Their 32–33 ms median
+main-path increase closes against synchronous `voicechat_tts_step()` time.
+The largest component is the native 28-layer TTS backbone scheduler
+compute/completion wait (about 16 ms median); code-generation scheduler work
+and CPU RVQ/nucleus sampling provide the remaining material cost. This is
+**D3_TTS_MAINPATH_ATTRIBUTED**, not a renderer or ALSA conclusion.
+
+The existing immutable snapshot is downstream of those generator operations.
+It safely hands an already generated frame sequence to the D1 codec/ISTFT
+worker, but cannot by itself move generator work: TTS K/V cache, position,
+previous code, conditioning cache, RNG, speech queue, and quiet/drain lifecycle
+are sequentially owned state. The next candidate, if separately authorized, is
+an ordered asynchronous native-generator ownership/handoff contract. See
+`research/hardware-validation/gfx1151/D3-NATIVE-TTS-MAINPATH-ATTRIBUTION-20260826.md`
+for the call graph, state map, and timing closure.
 
 ## D2: contribution and open gates
 
