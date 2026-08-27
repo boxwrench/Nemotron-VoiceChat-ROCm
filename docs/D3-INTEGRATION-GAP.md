@@ -274,5 +274,12 @@ backlog, and full duplex scheduler interaction are still unmeasured.
 The first D6 control used the existing `VC_FHEAD_GPU=1` option with the same
 renderer/TTS-off 37-frame sequence. It preserved exact frame authorization but
 logged `VC_FHEAD_GPU set but no GPU backend device found, staying on cpu`.
-That is **D6_FHEAD_GPU_NO_MECHANISM**, not a GPU-head performance or fidelity
-result. The next decision must not infer a speedup from its CPU-fallback timing.
+That is **D6_FHEAD_GPU_CONTROL_NOT_ACTIVATED**, not a GPU-head performance or
+fidelity result. It must not be used to judge the GPU-head mechanism.
+
+Runtime `7a8ab71e8f5a5e981096f1ca83783dd47c92477e` makes the narrow portable
+discovery correction: try `IGPU` after `GPU`, matching ggml's generic backend
+preference. One-slice CPU/GPU probes on gfx1151 then emitted the same function
+token (12), while the GPU probe reported `function_head_gpu:true` and mirrored
+the head to `ROCm0`. This is activation/parity proof only; no new service curve
+or renderer result has been run.
