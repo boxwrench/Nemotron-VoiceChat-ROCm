@@ -33,20 +33,30 @@ def main() -> int:
     ap.add_argument("--binary", required=True)
     ap.add_argument("--model", required=True)
     ap.add_argument("--mmproj", required=True)
-    ap.add_argument("--tts", required=True)
+    ap.add_argument("--tts")
     ap.add_argument("--wav", required=True)
     ap.add_argument("--events", required=True)
     ap.add_argument("--alsa", action="store_true")
+    ap.add_argument("--no-renderer", action="store_true",
+                    help="disable the D1 renderer worker for service attribution")
+    ap.add_argument("--no-tts", action="store_true",
+                    help="exclude native TTS model/work from a D3 service probe")
     ap.add_argument("--ngl", default="99")
     ap.add_argument("--max-frames", type=int, default=None,
                     help="send at most this many 80 ms slices (0 exercises live_start only)")
     args = ap.parse_args()
 
+    if not args.no_tts and not args.tts:
+        ap.error("--tts is required unless --no-tts is selected")
+    if args.no_tts and not args.no_renderer:
+        ap.error("--no-tts requires --no-renderer")
+
     samples = pcm_f32(args.wav)
     # D3 has no end-of-input semantic yet; align only to full captured slices.
     samples = samples[: len(samples) // SLICE * SLICE]
-    cmd = [args.binary, "-m", args.model, "--mmproj", args.mmproj,
-           "--tts", args.tts, "-ngl", args.ngl, "--serve"]
+    cmd = [args.binary, "-m", args.model, "--mmproj", args.mmproj, "-ngl", args.ngl, "--serve"]
+    if not args.no_tts:
+        cmd[5:5] = ["--tts", args.tts]
     # Runtime/model loading is verbose. Keeping stderr in a pipe can fill it
     # before the JSON `ready` event arrives and deadlock the harness. Retain
     # diagnostics in a sibling artifact without putting them on the handshake
@@ -66,7 +76,8 @@ def main() -> int:
     events.append(ready)
     if ready.get("kind") != "ready":
         raise RuntimeError(f"expected ready, got {ready}")
-    send({"cmd": "live_start", "alsa": args.alsa})
+    send({"cmd": "live_start", "alsa": args.alsa,
+          "renderer": not args.no_renderer, "tts": not args.no_tts})
     events.append(json.loads(proc.stdout.readline()))
 
     capture0 = time.monotonic_ns() // 1000

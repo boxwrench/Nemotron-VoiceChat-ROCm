@@ -24,7 +24,7 @@ it does not rewrite an old result as if it had already shipped.
 | D1 async renderer | QUALIFIED | runtime `14676822b9b973070ee04d1d8ebf5ba11fff22b2` | no | no real ALSA/live-timeline qualification | no | real sink, contention, bounded lifecycle in D3 |
 | D2 bounded encoder state | QUALIFIED | runtime `6da91b8c6e5035110721dd3319f0511376d7487c` | no | research fidelity/probe evidence only | no | persistent frontend/preencoder API and matched service curve |
 | Strix XDNA perception | ECONOMIC_HOLD | probes only | no | XDNA host/LLM/speech, not VoiceChat perception | no | D2 + duplex placement economics |
-| D3 live causal timeline | active | runtime `b4692dee6b765b21419899137af291ed05bfdefb` | research serve path only | gfx1151 one-slice causality PASS; 146.157 ms total / deadline miss | no | short-sequence attribution, renderer qualification, live capture client |
+| D3 live causal timeline | active | runtime `11b808ec73aa331f06e6ce357eaa18dcbb00b959` | research serve path only | gfx1151 causality PASS; renderer/TTS-off VC01 steady total p95 88.590 ms | no | measurement-led combined-service attribution, renderer qualification, live capture client |
 
 The stale README rows that called D1/D2 “NEXT” and D3 “blocked” were accurate
 before the two research branches existed. D3 is **not architecturally
@@ -239,3 +239,34 @@ causality/authorization invariant passed on hardware. Its service time was
 correct current classification is **D3_CORRECT_BUT_DEADLINE_UNSTABLE**. The
 one-frame result deliberately stops before renderer/ALSA work and does not
 attribute the miss or make a placement recommendation.
+
+## Renderer-disabled service curve (2026-08-26)
+
+Runtime `11b808ec73aa331f06e6ce357eaa18dcbb00b959` adds explicit research
+controls used only for this measurement: `live_start` ran with `tts:false` and
+`renderer:false`. The 37 consecutive VC01 slices therefore exercised the same
+causal D2/main state path without native TTS publication, D1 codec work, or an
+ALSA sink. Every input slice produced exactly one `d3_frame`; frame ids were
+the contiguous range 0–36 and the session exited at `t: 37`.
+
+| Metric | Frame 0 | Frames 1–36 |
+| --- | ---: | ---: |
+| perception | 77.389 ms | p50 24.909 ms; p95 32.423 ms; p99/max 33.329 ms |
+| main | 52.251 ms | p50 52.264 ms; p95 62.932 ms; p99/max 68.616 ms |
+| total | 129.640 ms | p50 78.206 ms; p95 88.590 ms; p99/max 93.704 ms |
+| deadline misses | 1 / 1 | 8 / 36 (22.2%) |
+
+The logical retained state grew from 988,064 to 8,078,240 bytes while the
+encoder history filled; VC01 is only 37 frames, so it does not reach the known
+14,548,992-byte encoder-state plateau. Perception did fall sharply after the
+first cold frame and did not show session-length growth over this partial
+occupancy range. The recorded runtime queue was zero because this controlled
+driver serializes each request. Under a real 80 ms capture cadence, cumulative
+service-minus-cadence debt is projected to peak at 62.964 ms and finish at
+15.426 ms; the per-frame inputs and timings are preserved in
+`research/hardware-validation/gfx1151/generated/D3-service-curve/renderer-off-vc01.csv`.
+
+Classification: **D3_COMBINED_SERVICE_BLOCK**. Neither steady perception nor
+the main step independently exceeded 80 ms, but their combined p95 did. This
+does not yet reopen the custom-XDNA economic hold: renderer, ALSA, real capture
+backlog, and full duplex scheduler interaction are still unmeasured.
